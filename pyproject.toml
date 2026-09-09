@@ -40,7 +40,7 @@ reporting = [
   "pandas>=2.2,<4",
   "seaborn>=0.13,<1",
   "python-pptx>=1.0,<2",
-  "reportlab>=4.0,<5",
+  "reportlab>=4.0,<6",
 ]
 dev = [
   "bandit>=1.7,<2",
