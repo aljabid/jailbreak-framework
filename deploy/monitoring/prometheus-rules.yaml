@@ -1,0 +1,38 @@
+groups:
+  - name: jailbreak-framework
+    rules:
+      - alert: JBFNotReady
+        expr: jbf_health_ready == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: Jailbreak Framework is not ready
+          description: One or more production readiness checks have failed.
+
+      - alert: JBFProviderErrorRate
+        expr: sum(rate(jbf_provider_requests_total{status!="success"}[10m])) > 0.1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Elevated model-provider error rate
+          description: Provider failures exceed 0.1 requests per second.
+
+      - alert: JBFCampaignWorkFailures
+        expr: increase(jbf_campaign_work_items_total{status="processor_error"}[15m]) > 3
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Repeated campaign work-item failures
+          description: More than three processor failures occurred in 15 minutes.
+
+      - alert: JBFQueueBacklog
+        expr: jbf_campaign_queued_items > 100
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: Campaign queue backlog
+          description: More than 100 work items have remained queued for 15 minutes.

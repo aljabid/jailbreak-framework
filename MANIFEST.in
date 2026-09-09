@@ -1,0 +1,21 @@
+include LICENSE README.md CHANGELOG.md CONTRIBUTING.md SECURITY.md
+include pyproject.toml config.yaml compose.yaml Dockerfile Makefile .env.example
+recursive-include application *.py
+recursive-include core *.py
+recursive-include data *.py *.json
+recursive-include domain *.py
+recursive-include evaluation *.py
+recursive-include models *.py
+recursive-include observability *.py
+recursive-include persistence *.py
+recursive-include policy *.py
+recursive-include strategies *.py
+recursive-include utils *.py
+recursive-include deploy *.yaml
+recursive-include docs *.md
+recursive-include scripts *.py *.sh
+prune tests
+prune notebooks
+prune outputs
+prune reports
+global-exclude __pycache__ *.py[cod]

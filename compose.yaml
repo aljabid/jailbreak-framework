@@ -1,0 +1,32 @@
+services:
+  jbf:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: jailbreak-framework:local
+    read_only: true
+    init: true
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      JBF_OUTPUT_RESULTS_FILE: /app/outputs/results.json
+      JBF_OUTPUT_LOGS_FILE: /app/outputs/logs.txt
+      JBF_OUTPUT_REPORT_DIR: /app/reports
+      JBF_STORAGE_DATABASE_PATH: /app/outputs/jbf.db
+    volumes:
+      - jbf_outputs:/app/outputs
+      - jbf_reports:/app/reports
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 256
+    mem_limit: 1g
+    cpus: 1.0
+
+volumes:
+  jbf_outputs:
+  jbf_reports:

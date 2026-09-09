@@ -1,0 +1,32 @@
+{
+  "audit_chain_valid": true,
+  "authorization": {
+    "document_sha256": "1de75d0365c1ebe71992e41a3fa2a31a2c18609f155969390a9d50118df76010",
+    "grant_id": "LOCAL-ACCEPTANCE-DRILL",
+    "signature_verified": true
+  },
+  "backup": {
+    "integrity": "ok",
+    "restoration_verified": true,
+    "sha256": "86c6d1920caa89e26f52d2733804b7c26a7c40772b10355028ec960bd4b78e41"
+  },
+  "campaign_id": "a9dbf656-c7f6-441e-a7e9-afde06f1bd85",
+  "campaign_status": "completed",
+  "completed_at": "2026-07-26T19:35:12.753973+00:00",
+  "counts": {
+    "completed": 1,
+    "failed": 0,
+    "queued": 0,
+    "running": 0,
+    "total": 1
+  },
+  "drill": "local-provider-production-acceptance",
+  "encryption_enabled": true,
+  "endpoint_scope": "loopback-only",
+  "model": "qwen2.5:0.5b",
+  "model_digest": "a8b0c51577010a279d933d14c2a8ab4b268079d44c5c8830c0a93900f1827c67",
+  "provider": "ollama",
+  "schema_version": "1.0",
+  "secrets_persisted": false,
+  "started_at": "2026-07-26T19:35:06.520515+00:00"
+}

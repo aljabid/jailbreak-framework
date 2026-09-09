@@ -1,0 +1,116 @@
+[build-system]
+requires = ["setuptools>=83,<84", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "jailbreak-framework"
+version = "1.1.0"
+description = "Authorized LLM security evaluation and red-teaming framework"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [{ name = "AI Red Team" }]
+keywords = ["llm", "security", "red-team", "ai-safety", "evaluation"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Science/Research",
+  "Topic :: Security",
+  "Programming Language :: Python :: 3",
+]
+dependencies = [
+  "click>=8.1.7,<9",
+  # >=50.0.0 -- fixes a real advisory (PYSEC-2026-3552 / CVE-2026-69247, a
+  # Bleichenbacher oracle in PKCS#7 EnvelopedData decryption). Not on any path
+  # KolaTree's integration actually calls (pkcs7_decrypt_* / AuthorizationVerifier
+  # are unused here), but there's no reason to keep the vulnerable range pinned.
+  "cryptography>=50.0.0,<51",
+  "openai>=1.30.0,<3",
+  "anthropic>=0.40.0,<1",
+  "pydantic>=2.8,<3",
+  "python-dotenv>=1.0.1,<2",
+  "pyyaml>=6.0.1,<7",
+  "requests>=2.31.0,<3",
+  "rich>=13.7.0,<16",
+]
+
+[project.optional-dependencies]
+reporting = [
+  "matplotlib>=3.8,<4",
+  "numpy>=1.26,<3",
+  "pandas>=2.2,<4",
+  "seaborn>=0.13,<1",
+  "python-pptx>=1.0,<2",
+  "reportlab>=4.0,<5",
+]
+dev = [
+  "bandit>=1.7,<2",
+  "build>=1.2,<2",
+  "mypy>=1.10,<3",
+  "pip-audit>=2.7,<3",
+  "pytest>=8.2,<10",
+  "pytest-cov>=5,<8",
+  "pytest-mock>=3.14,<4",
+  "ruff>=0.5,<1",
+  "setuptools>=83,<84",
+  "types-PyYAML>=6.0,<7",
+  "types-requests>=2.31,<3",
+  "types-reportlab>=4.0,<5",
+  "wheel>=0.45,<1",
+]
+local = [
+  "transformers>=4.41,<6",
+]
+
+[project.scripts]
+jbf = "main:cli"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = [
+  "application*",
+  "core*",
+  "data*",
+  "domain*",
+  "evaluation*",
+  "models*",
+  "observability*",
+  "policy*",
+  "persistence*",
+  "strategies*",
+  "utils*",
+]
+
+[tool.setuptools]
+py-modules = ["main"]
+
+[tool.setuptools.package-data]
+data = ["*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = ["-v", "--tb=short", "-p", "no:warnings"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+exclude = [".venv", "notebooks", "outputs", "reports"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.12"
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+no_implicit_optional = true
+check_untyped_defs = true
+exclude = ["\\.venv/", "notebooks/"]
+
+[[tool.mypy.overrides]]
+module = ["matplotlib.*", "numpy.*", "pandas.*"]
+follow_imports = "skip"
