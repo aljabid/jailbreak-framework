@@ -94,8 +94,9 @@ next planned version.
 - Randomized prompt generation and mock-provider behavior are fully seedable.
 - Provider retry logic honors bounded `Retry-After` and jitter.
 - Runtime cryptography is upgraded to `48.0.1`.
-- Container base is upgraded and digest-pinned to Python 3.12.13 on Debian
-  12.15 after remediation of release-gate findings.
+- Container base is upgraded and digest-pinned to Python 3.12.14 on Debian
+  12, and the runtime stage applies Debian security updates, after the
+  weekly Trivy scan flagged fixable CRITICAL/HIGH base-image CVEs.
 - SQLite schema is version 5; evaluator and scoring contracts are version 2.0.
 - Keyword evaluator now Unicode-normalises typographic punctuation (curly
   quotes, en/em dashes, narrow no-break spaces) before matching, and the

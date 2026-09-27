@@ -905,8 +905,8 @@ docker compose run --rm jbf health --profile production
 ```
 
 The multi-stage `Dockerfile` builds from a digest-pinned Python
-3.12.13/Debian 12.15 base, installs runtime dependencies with hashes from the
-committed lockfile, excludes build tooling from the runtime stage, and runs
+3.12.14/Debian 12 base, applies OS security updates, installs runtime
+dependencies with hashes from the committed lockfile, excludes build tooling from the runtime stage, and runs
 as non-root UID/GID 65532. `compose.yaml` additionally applies a read-only
 root filesystem, dropped Linux capabilities, `no-new-privileges`, and
 PID/memory/CPU limits. `scripts/scan_image.sh` fails the build on any fixed

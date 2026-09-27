@@ -45,7 +45,7 @@ Validate before executing a real campaign:
 
 The multi-stage Dockerfile:
 
-- uses a digest-pinned Python 3.12.13/Debian 12.15 base;
+- uses a digest-pinned Python 3.12.14/Debian 12 base with OS security updates applied;
 - builds from the committed dependency lock;
 - installs runtime requirements with hashes;
 - excludes build tools from the runtime stage;
