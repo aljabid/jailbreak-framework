@@ -1,0 +1,302 @@
+[
+ {
+  "model": "local_qwen2_5_0_5b",
+  "n": 107,
+  "asr": {
+   "keyword": {
+    "asr": 0.037383177570093455,
+    "ci": [
+     0.009345794392523364,
+     0.07476635514018691
+    ],
+    "positives": 4
+   },
+   "llm_judge": {
+    "asr": 0.16822429906542055,
+    "ci": [
+     0.102803738317757,
+     0.24299065420560748
+    ],
+    "positives": 18
+   },
+   "llamaguard": {
+    "asr": 0.2803738317757009,
+    "ci": [
+     0.19626168224299065,
+     0.3644859813084112
+    ],
+    "positives": 30
+   }
+  },
+  "pairs": {
+   "keyword~llm_judge": {
+    "kappa": 0.22533936651583678,
+    "only_a": 1,
+    "only_b": 15,
+    "p": 0.000518798828125
+   },
+   "keyword~llamaguard": {
+    "kappa": 0.11830488522660369,
+    "only_a": 1,
+    "only_b": 27,
+    "p": 2.1606683731079102e-07
+   },
+   "llm_judge~llamaguard": {
+    "kappa": 0.5251479289940829,
+    "only_a": 3,
+    "only_b": 15,
+    "p": 0.007537841796875
+   }
+  }
+ },
+ {
+  "model": "local_qwen2_5_1_5b",
+  "n": 98,
+  "asr": {
+   "keyword": {
+    "asr": 0.02040816326530612,
+    "ci": [
+     0.0,
+     0.05102040816326531
+    ],
+    "positives": 2
+   },
+   "llm_judge": {
+    "asr": 0.07142857142857142,
+    "ci": [
+     0.02040816326530612,
+     0.12244897959183673
+    ],
+    "positives": 7
+   },
+   "llamaguard": {
+    "asr": 0.10204081632653061,
+    "ci": [
+     0.04081632653061224,
+     0.16326530612244897
+    ],
+    "positives": 10
+   }
+  },
+  "pairs": {
+   "keyword~llm_judge": {
+    "kappa": 0.42622950819672123,
+    "only_a": 0,
+    "only_b": 5,
+    "p": 0.0625
+   },
+   "keyword~llamaguard": {
+    "kappa": 0.1373239436619726,
+    "only_a": 1,
+    "only_b": 9,
+    "p": 0.021484375
+   },
+   "llm_judge~llamaguard": {
+    "kappa": 0.2935779816513757,
+    "only_a": 4,
+    "only_b": 7,
+    "p": 0.548828125
+   }
+  }
+ },
+ {
+  "model": "local_qwen2_5_3b",
+  "n": 107,
+  "asr": {
+   "keyword": {
+    "asr": 0.009345794392523364,
+    "ci": [
+     0.0,
+     0.028037383177570093
+    ],
+    "positives": 1
+   },
+   "llm_judge": {
+    "asr": 0.11214953271028037,
+    "ci": [
+     0.056074766355140186,
+     0.16822429906542055
+    ],
+    "positives": 12
+   },
+   "llamaguard": {
+    "asr": 0.1308411214953271,
+    "ci": [
+     0.07476635514018691,
+     0.19626168224299065
+    ],
+    "positives": 14
+   }
+  },
+  "pairs": {
+   "keyword~llm_judge": {
+    "kappa": -0.017556693489392317,
+    "only_a": 1,
+    "only_b": 12,
+    "p": 0.00341796875
+   },
+   "keyword~llamaguard": {
+    "kappa": -0.017755231452124043,
+    "only_a": 1,
+    "only_b": 14,
+    "p": 0.0009765625
+   },
+   "llm_judge~llamaguard": {
+    "kappa": 0.38757154538021243,
+    "only_a": 6,
+    "only_b": 8,
+    "p": 0.79052734375
+   }
+  }
+ },
+ {
+  "model": "groq_openai_gpt-oss-20b",
+  "n": 94,
+  "asr": {
+   "keyword": {
+    "asr": 0.0,
+    "ci": [
+     0.0,
+     0.0
+    ],
+    "positives": 0
+   },
+   "llm_judge": {
+    "asr": 0.0,
+    "ci": [
+     0.0,
+     0.0
+    ],
+    "positives": 0
+   },
+   "llamaguard": {
+    "asr": 0.0,
+    "ci": [
+     0.0,
+     0.0
+    ],
+    "positives": 0
+   }
+  },
+  "pairs": {
+   "keyword~llm_judge": {
+    "kappa": NaN,
+    "only_a": 0,
+    "only_b": 0,
+    "p": 1.0
+   },
+   "keyword~llamaguard": {
+    "kappa": NaN,
+    "only_a": 0,
+    "only_b": 0,
+    "p": 1.0
+   },
+   "llm_judge~llamaguard": {
+    "kappa": NaN,
+    "only_a": 0,
+    "only_b": 0,
+    "p": 1.0
+   }
+  }
+ },
+ {
+  "model": "groq_openai_gpt-oss-safeguard-20b",
+  "n": 98,
+  "asr": {
+   "keyword": {
+    "asr": 0.0,
+    "ci": [
+     0.0,
+     0.0
+    ],
+    "positives": 0
+   },
+   "llm_judge": {
+    "asr": 0.0,
+    "ci": [
+     0.0,
+     0.0
+    ],
+    "positives": 0
+   },
+   "llamaguard": {
+    "asr": 0.0,
+    "ci": [
+     0.0,
+     0.0
+    ],
+    "positives": 0
+   }
+  },
+  "pairs": {
+   "keyword~llm_judge": {
+    "kappa": NaN,
+    "only_a": 0,
+    "only_b": 0,
+    "p": 1.0
+   },
+   "keyword~llamaguard": {
+    "kappa": NaN,
+    "only_a": 0,
+    "only_b": 0,
+    "p": 1.0
+   },
+   "llm_judge~llamaguard": {
+    "kappa": NaN,
+    "only_a": 0,
+    "only_b": 0,
+    "p": 1.0
+   }
+  }
+ },
+ {
+  "model": "ALL MODELS (pooled)",
+  "n": 504,
+  "asr": {
+   "keyword": {
+    "asr": 0.013888888888888888,
+    "ci": [
+     0.005952380952380952,
+     0.023809523809523808
+    ],
+    "positives": 7
+   },
+   "llm_judge": {
+    "asr": 0.07341269841269842,
+    "ci": [
+     0.051587301587301584,
+     0.0992063492063492
+    ],
+    "positives": 37
+   },
+   "llamaguard": {
+    "asr": 0.10714285714285714,
+    "ci": [
+     0.08134920634920635,
+     0.13690476190476192
+    ],
+    "positives": 54
+   }
+  },
+  "pairs": {
+   "keyword~llm_judge": {
+    "kappa": 0.20879120879120813,
+    "only_a": 2,
+    "only_b": 32,
+    "p": 6.938353180885315e-08
+   },
+   "keyword~llamaguard": {
+    "kappa": 0.10924369747899129,
+    "only_a": 3,
+    "only_b": 50,
+    "p": 5.519584789226428e-12
+   },
+   "llm_judge~llamaguard": {
+    "kappa": 0.4823731728288904,
+    "only_a": 13,
+    "only_b": 30,
+    "p": 0.0137181850586785
+   }
+  }
+ }
+]

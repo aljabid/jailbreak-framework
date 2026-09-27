@@ -68,7 +68,7 @@ def cohen_kappa(a: list[bool], b: list[bool]) -> float:
     po = sum(x == y for x, y in zip(a, b)) / n
     pa, pb = sum(a) / n, sum(b) / n
     pe = pa * pb + (1 - pa) * (1 - pb)
-    return 1.0 if pe == 1 else (po - pe) / (1 - pe)
+    return math.nan if pe == 1 else (po - pe) / (1 - pe)  # undefined when one class never occurs
 
 
 def mcnemar_exact(a: list[bool], b: list[bool]) -> tuple[int, int, float]:
