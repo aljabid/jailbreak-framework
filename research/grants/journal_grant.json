@@ -1,0 +1,16 @@
+{
+ "schema_version": "1.0",
+ "grant_id": "JOURNAL-2026-STUDY-01",
+ "issued_by": "aljabid444@gmail.com",
+ "issued_at": "2026-10-01T00:00:00Z",
+ "not_before": "2026-10-01T00:00:00Z",
+ "expires_at": "2027-03-31T23:59:59Z",
+ "target_ids": ["journal-study"],
+ "providers": ["openai", "local"],
+ "models": ["qwen2.5:0.5b","qwen2.5:1.5b","qwen2.5:3b","qwen2.5:7b","qwen2.5:14b",
+            "llama3.2:1b","llama3.2:3b","llama3.1:8b","mistral:7b",
+            "openai/gpt-oss-20b","openai/gpt-oss-safeguard-20b","openai/gpt-oss-120b",
+            "qwen/qwen3.8-27b","gemini-2.5-flash","gemma-4-31b-it"],
+ "strategies": ["roleplay","instruction_override","encoding_attack","token_smuggling","fictional_framing","multi_turn"],
+ "max_requests": 50000
+}
