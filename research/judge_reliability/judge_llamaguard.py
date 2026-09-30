@@ -10,19 +10,22 @@ Verdicts go to research/judge_reliability/out/<stem>_llamaguard.json keyed by
 strategy|base_prompt_id|variation. Resumable: existing keys are skipped and
 the file is rewritten after every record.
 
-  ollama pull llama-guard3:1b
+  ollama pull llama-guard3:1b   # or set JBF_GUARD_MODEL=llama-guard3:8b on a GPU
   python research/judge_reliability/judge_llamaguard.py csam2026/adv_*_judged.json
 """
 from __future__ import annotations
 
 import json
+import os
 import sys
 import time
 import urllib.request
 from pathlib import Path
 
-MODEL = "llama-guard3:1b"
+MODEL = os.environ.get("JBF_GUARD_MODEL", "llama-guard3:1b")
 URL = "http://localhost:11434/api/chat"
+# default 1B keeps the original file names; other sizes get their own suffix
+SUFFIX = "llamaguard" if MODEL == "llama-guard3:1b" else "llamaguard_" + MODEL.split(":")[-1]
 OUT_DIR = Path(__file__).parent / "out"
 
 
@@ -64,7 +67,7 @@ def main(paths: list[str]) -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     for path in paths:
         src = Path(path)
-        out = OUT_DIR / f"{src.stem.removesuffix('_judged')}_llamaguard.json"
+        out = OUT_DIR / f"{src.stem.removesuffix('_judged')}_{SUFFIX}.json"
         done = json.loads(out.read_text(encoding="utf-8")) if out.exists() else {}
         done = {k: v for k, v in done.items() if v["label"] != "error"}
         records = json.loads(src.read_text(encoding="utf-8"))
