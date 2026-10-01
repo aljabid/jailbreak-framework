@@ -36,7 +36,7 @@ def record_key(r: dict) -> str:
 
 def load(path: Path, include_manual: bool) -> tuple[str, list[dict], int]:
     stem = path.stem.removesuffix("_judged")
-    guard_file = OUT_DIR / f"{stem}_lg3_1b.json"
+    guard_file = OUT_DIR / f"{stem}_lg3_8b.json"
     guard = json.loads(guard_file.read_text(encoding="utf-8")) if guard_file.exists() else {}
     sr_file = OUT_DIR / f"{stem}_strongreject.json"
     sr = json.loads(sr_file.read_text(encoding="utf-8")) if sr_file.exists() else {}
