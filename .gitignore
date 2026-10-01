@@ -79,3 +79,7 @@ outputs/analysis/
 data/advbench/
 data/imported_prompts.json
 csam2026/
+
+# harmful raw model responses - kept locally, never published
+research/data_journal/
+research/judge_reliability/labeling/
