@@ -88,6 +88,10 @@ def cli(ctx, config, verbose):
     "--count", "-n", default=None, type=click.IntRange(min=1), help="Max prompts per strategy"
 )
 @click.option(
+    "--variations", default=1, type=click.IntRange(min=1), show_default=True,
+    help="Adversarial prompts generated per base prompt per strategy",
+)
+@click.option(
     "--eval-mode",
     default=None,
     type=click.Choice(["keyword", "ai_judge", "hybrid"]),
@@ -143,6 +147,7 @@ def run(
     max_tokens,
     timeout,
     count,
+    variations,
     eval_mode,
     judge_model,
     keywords_file,
@@ -174,7 +179,7 @@ def run(
         seed=seed,
         categories=list(categories) if categories else None,
     )
-    planned_count = sum(len(generator.generate_batch(name, count=count)) for name in strategies)
+    planned_count = sum(len(generator.generate_batch(name, count=count, variations=variations)) for name in strategies)
     if not mock:
         resolved_provider = provider or cfg.model_provider
         resolved_model = model_name or cfg.model_name
@@ -277,7 +282,7 @@ def run(
         click.echo(f"  Strategy: {strat_name}")
         click.echo(f"{'=' * 60}")
 
-        batch = generator.generate_batch(strat_name, count=count)
+        batch = generator.generate_batch(strat_name, count=count, variations=variations)
         click.echo(f"  Generated {len(batch)} adversarial prompts")
 
         click.echo(f"  Sending to model: {model.model_name}")
