@@ -1,0 +1,5 @@
+rank,judge,accuracy,precision,recall,F1,kappa,n
+1,gpt-oss judge,0.71,0.64,0.67,0.65,0.408,132
+2,StrongREJECT,0.69,0.66,0.60,0.63,0.369,121
+3,Llama Guard 8B,0.60,0.51,0.72,0.60,0.221,132
+4,Keyword,0.61,0.67,0.11,0.19,0.083,132
