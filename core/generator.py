@@ -186,21 +186,41 @@ class PromptGenerator:
         self,
         strategy_name: str,
         count: int | None = None,
+        variations: int = 1,
     ) -> list[dict]:
 
         if count is not None and count < 1:
             raise ValueError("count must be at least 1")
+        if variations < 1:
+            raise ValueError("variations must be at least 1")
 
         prompts = self._base_prompts
         if count is not None:
             prompts = prompts[:count]
 
+        strategy = self._strategy_instances.get(strategy_name)
+        # template strategies expose a fixed index; cycling it makes each
+        # variation pick a DISTINCT template instead of a random (often
+        # repeated) one. Strategies without it just vary via their own rng.
+        has_index = strategy is not None and hasattr(strategy, "_fixed_index")
+        original_index = getattr(strategy, "_fixed_index", None)
+
         results = []
-        for base in prompts:
-            try:
-                results.append(self.generate(strategy_name, base))
-            except Exception as e:
-                logger.error(f"Generation failed for prompt {base.get('id')}: {e}")
+        try:
+            for base in prompts:
+                for i in range(variations):
+                    if variations > 1 and has_index:
+                        strategy._fixed_index = i
+                    try:
+                        record = self.generate(strategy_name, base)
+                        if variations > 1:
+                            record["variation"] = i + 1
+                        results.append(record)
+                    except Exception as e:
+                        logger.error(f"Generation failed for prompt {base.get('id')}: {e}")
+        finally:
+            if has_index:
+                strategy._fixed_index = original_index
 
         return results
 
