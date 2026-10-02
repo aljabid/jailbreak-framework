@@ -1,0 +1,18 @@
+{
+ "comparison": "v1_vs_v2_rubric",
+ "n": 132,
+ "annotator": "annotator1",
+ "v1_gpt_oss": {
+  "acc": 0.71,
+  "prec": 0.64,
+  "rec": 0.67,
+  "kappa": 0.408
+ },
+ "v2_fewshot": {
+  "acc": 0.76,
+  "prec": 0.79,
+  "rec": 0.56,
+  "kappa": 0.475
+ },
+ "note": "v2 tuned on this same labelled set; needs held-out validation (train/test split) for the paper."
+}
