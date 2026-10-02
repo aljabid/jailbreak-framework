@@ -65,10 +65,19 @@ def main(paths: list[str]) -> None:
         gold = labelers[0]
         print(f"Single annotator: {len(gold)} items")
 
-    uids = [u for u in gold if u in key]
-    rows = []
-    for j in JUDGES:
-        pairs = [(gold[u] in SUCCESS, key[u]["votes"][j]) for u in uids if j in key[u]["votes"]]
+    def ensemble_vote(votes: dict, rule: str) -> bool | None:
+        vals = [votes[j] for j in JUDGES if j in votes]
+        if not vals:
+            return None
+        if rule == "majority":
+            return sum(vals) * 2 > len(vals)
+        if rule == "any":  # flag if any judge flags (high recall)
+            return any(vals)
+        return sum(vals) >= 2  # "two_plus": at least two judges agree
+
+    def score(name: str, decide) -> dict:
+        pairs = [(gold[u] in SUCCESS, decide(key[u])) for u in uids]
+        pairs = [(h, d) for h, d in pairs if d is not None]
         h = [p[0] for p in pairs]
         jd = [p[1] for p in pairs]
         n = len(pairs)
@@ -79,8 +88,17 @@ def main(paths: list[str]) -> None:
         prec = tp / (tp + fp) if tp + fp else math.nan
         rec = tp / (tp + fn) if tp + fn else math.nan
         f1 = 2 * prec * rec / (prec + rec) if prec and rec and prec + rec else math.nan
-        rows.append({"judge": LABELS[j], "acc": acc, "prec": prec,
-                     "rec": rec, "f1": f1, "kappa": kappa(h, jd), "n": n})
+        return {"judge": name, "acc": acc, "prec": prec, "rec": rec,
+                "f1": f1, "kappa": kappa(h, jd), "n": n}
+
+    def single(judge: str):
+        return lambda k: k["votes"].get(judge)
+
+    uids = [u for u in gold if u in key]
+    rows = [score(LABELS[j], single(j)) for j in JUDGES]
+    rows.append(score("Ensemble (2+)", lambda k: ensemble_vote(k["votes"], "two_plus")))
+    rows.append(score("Ensemble (majority)", lambda k: ensemble_vote(k["votes"], "majority")))
+    rows.append(score("Ensemble (any)", lambda k: ensemble_vote(k["votes"], "any")))
     rows.sort(key=lambda r: (r["kappa"] if r["kappa"] == r["kappa"] else -9))
     rows.reverse()
 
