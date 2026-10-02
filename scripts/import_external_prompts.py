@@ -72,11 +72,40 @@ KNOWN_SOURCES: dict[str, dict[str, str]] = {
         "url": "https://github.com/JailbreakBench/jailbreakbench",
         "license": "MIT (verify current terms at the source before redistribution).",
     },
+    "harmbench": {
+        "name": "HarmBench",
+        "citation": (
+            "Mazeika, Phan, Yin et al. (2024), 'HarmBench: A Standardized "
+            "Evaluation Framework for Automated Red Teaming and Robust Refusal'"
+        ),
+        "url": "https://github.com/centerforaisafety/HarmBench",
+        "license": "MIT (verify current terms at the source before redistribution).",
+    },
+    "inthewild": {
+        "name": "In-The-Wild Jailbreak Prompts (Shen et al.)",
+        "citation": (
+            "Shen, Chen, Backes, Shen & Zhang (2024), '\"Do Anything Now\": "
+            "Characterizing and Evaluating In-The-Wild Jailbreak Prompts on LLMs'"
+        ),
+        "url": "https://huggingface.co/datasets/TrustAIRLab/in-the-wild-jailbreak-prompts",
+        "license": "MIT (verify current terms at the source before redistribution).",
+    },
+    "strongreject": {
+        "name": "StrongREJECT",
+        "citation": (
+            "Souly, Lu, Bowen et al. (2024), 'A StrongREJECT for Empty Jailbreaks'"
+        ),
+        "url": "https://github.com/alexandrasouly/strongreject",
+        "license": "MIT (verify current terms at the source before redistribution).",
+    },
 }
 
 DEFAULT_COLUMNS: dict[str, dict[str, str]] = {
     "advbench": {"text": "goal", "category": "", "id": ""},
     "jailbreakbench": {"text": "Goal", "category": "Category", "id": "Index"},
+    "harmbench": {"text": "Behavior", "category": "SemanticCategory", "id": "BehaviorID"},
+    "inthewild": {"text": "prompt", "category": "", "id": ""},
+    "strongreject": {"text": "forbidden_prompt", "category": "category", "id": ""},
 }
 
 
@@ -153,7 +182,7 @@ def merge_into(existing_path: Path, new_records: list[dict[str, Any]]) -> dict[s
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--source", required=True, choices=["advbench", "jailbreakbench", "custom"])
+    parser.add_argument("--source", required=True, choices=["advbench", "jailbreakbench", "harmbench", "inthewild", "strongreject", "custom"])
     parser.add_argument("--input", required=True, type=Path, help="Local CSV or JSON file you already obtained")
     parser.add_argument("--output", required=True, type=Path, help="Where to write the converted prompts JSON")
     parser.add_argument("--merge-into", type=Path, default=None, help="Existing prompts.json-shaped file to append into instead of overwriting --output")
