@@ -131,3 +131,42 @@ being jailbreak-specific, and fits a security journal.
 2609.00498, 2606.25782, 2605.31381, 2511.21140, 2605.06939, 2301.09633, 2606.05308, 2606.03211,
 2605.09702, 2609.06444, 2605.05678, 2604.19001, 2505.17244, 2511.15169, 2608.24232, 2502.12893,
 2609.36254, 2605.09070, 2503.02574, 2605.01687.
+
+## 6. Full-text reading (2026-10-13) and what it changes
+
+Read in full: Gao 2606.25487, Fiedler 2605.06939 (first half plus tables), Chouldechova 2601.18076
+(measurement-validity sections), Lee 2511.21140 (keyword scan of the text), Chain of Risk 2605.05678
+(judge-validation appendix), Calibrate-Don't-Curate 2605.09702 (keyword scan). Not read in full: Schwinn
+2603.06594 ("A Coin Flip for Safety", abstract only), Chen 2601.05420 (abstract only), Collot 2512.08121
+(abstract only). Statements about those three are provisional.
+
+| Paper | What the full text shows | Effect on our ideas |
+|---|---|---|
+| Chouldechova | Section 5 states that judges with different TPR/FPR across target systems and across jailbreak methods bias ASR comparisons, that studies "rarely assess, much less report" judge performance disaggregated by target model, and that misclassification statistics (Yi 2016) can give more valid ASRs. Recommendation 4: report judge performance disaggregated by target system and method and correct where errors differ. A position paper: no estimator, no data | I1 is the **empirical execution of their recommendation 4**, not a new idea. Cite and frame it that way |
+| Fiedler | Defines Youden J and delta-J (cross-model calibration gap), shows 1/J amplification and a sign reversal on MMLU-Pro, recommends model-specific calibration (PPI++) and bootstrap intervals, and calls delta-J "novel as a formal diagnostic". Not about safety | The statistics of I1 exist. What remains is jailbreak data with per-cell delta-J, which nobody (in what I read) reports |
+| Gao | One dataset (HarmBench classifier validation set, 596 items), three small open LLM judges, a precision-only correction with no interval, no per-model or per-attack analysis. Its limitations section lists exactly those gaps. Cites Schwinn and Miller (error bars) as closest work | Confirms the gap for a jailbreak estimator with intervals; also shows the field already accepts "report precision/recall and corrected ASR" as advice |
+| Lee et al. | Rogan-Gladen with intervals that include calibration uncertainty; robust to shift in the true-positive rate if judge behaviour depends only on latent correctness (an assumption that fails if error depends on the victim model). No stratification, no safety, no rare-event treatment | Their assumption is the formal reason per-cell error matters for jailbreaks; use it as motivation |
+| Chain of Risk | Judges (two LLMs) validated on 80 examples by three humans: binary-unsafe kappa 0.708 (trace) and 0.741 (answer). No judge-error correction or interval for the reported rates found in my keyword scan (not exhaustive) | I5 stays open, but the baseline human validation is small (80 items), so a larger labelled trace study is a real step up |
+| Calibrate-Don't-Curate | Estimation from noisy judges with a limited label budget; judge-panel heterogeneity; datasets are judge benchmarks (JudgeBench, RewardBench), not safety | Label-budget idea is not unique to us; the jailbreak rare-event stratum is our angle |
+| Schwinn (abstract) | 6,642 human-verified labels; judge accuracy often near chance under shifts of victim model, attack and ambiguity; many attacks inflate ASR by exploiting judges; releases ReliableBench and JudgeStressTest | **Overlaps the empirical half of I1 strongly** and has about six times our planned labels. What the abstract does not mention: corrected ASR, intervals, conclusion-stability re-analysis |
+| Chen (abstract) | Efficient influence-function estimators unifying Rogan-Gladen and PPI, intervals up to about 10x narrower than Rogan-Gladen (secondary source) | The generic estimator is settled; we should use PPI++/EIF rather than invent one |
+
+### Revised honest assessment
+* "Judge error varies by victim model and attack" is **established** (Schwinn, Chouldechova, MultiBreak,
+  CASCADE). It cannot be a headline.
+* "A better correction estimator" is **not available to us**: Lee, Chen and Fiedler cover the generic
+  statistics, and the stratified/active variants exist in PPI work.
+* What the papers read do **not** contain: (a) per-cell sensitivity/specificity with delta-J and
+  coverage-checked corrected ASRs on current-generation open models; (b) a re-analysis showing which
+  published-style conclusions change after correction; (c) a certified bound on what all judges miss in a
+  rare-event setting; (d) signed, re-verifiable evaluation records; (e) a large human-labelled trace-vs-answer
+  study. Items (d) and (a)-(b) are the most distinctive in combination; (c) rests on classical bounds
+  (rule of three) and would be a modest contribution on its own.
+* Consequence: the paper is an **applied measurement-validity study with a verifiable protocol**, not a
+  statistics-novelty paper. That fits a security/applied journal (Computers & Security, JISA) and is a stretch
+  for venues that demand new theory. A possible change of plan: put I3 (verifiable evaluation) and the
+  conclusion re-analysis first, and present I1 as the empirical answer to Chouldechova's recommendation 4.
+
+### Still to read before claiming anything
+Schwinn et al. 2603.06594 in full (closest empirical competitor), Chen 2601.05420, Collot 2512.08121,
+Know Thy Judge 2503.04474, Miller 2411.00640, MultiBreak 2605.01687, Mu 2609.10594.
