@@ -170,3 +170,70 @@ Read in full: Gao 2606.25487, Fiedler 2605.06939 (first half plus tables), Choul
 ### Still to read before claiming anything
 Schwinn et al. 2603.06594 in full (closest empirical competitor), Chen 2601.05420, Collot 2512.08121,
 Know Thy Judge 2503.04474, Miller 2411.00640, MultiBreak 2605.01687, Mu 2609.10594.
+
+## 7. Second reading pass: Schwinn, Mu, Chen, Collot, Know Thy Judge, Miller, MultiBreak
+
+Read: Schwinn 2603.06594 (full text, main body), Mu 2609.10594 (setup and main results), Know Thy Judge
+2503.04474 (abstract and introduction), Collot 2512.08121 (abstract and introduction), Miller 2411.00640
+(abstract and introduction), Chen 2601.05420 (keyword scan only), MultiBreak 2605.01687 (keyword scan only;
+the 0.13 and 0.89 agreement figures appear in its tables but I did not verify the metric).
+
+### Schwinn et al., "A Coin Flip for Safety" (closest competitor)
+* Setup: 100 HarmBench behaviours; 4 victim models (Gemma-3-1B, Llama-3.1-8B, Gemma-27B, Qwen3-32B); 5
+  attacks (direct, GCG, GCG-REINFORCE, Best-of-N, PAIR); 4 judges (Llama Guard 3, HarmBench classifier,
+  Aegis, JailJudge); 6,642 human labels on a 1 to 5 scale (harmful = 3 or higher), partly crowd-labelled
+  after a 10-item quiz, 95% agreement on a 90-item review.
+* Per attack x victim-model judge accuracy is shown in heat maps (Figure 3); at least 105 labels per
+  attack-model pair. So **"judge error varies by victim model and attack" is already demonstrated** and our
+  I1 cannot claim it.
+* **They label only judge-positives.** Humans annotated responses that a StrongREJECT judge scored above
+  0.5, because labelling judge-negatives was judged "prohibitively inefficient". Consequences: false
+  negatives (what the judges miss) are never measured, "accuracy" is computed on a selected,
+  roughly balanced subset of judge-positives, and the corrected ASR is **precision only**
+  (ASR x precision), without recall and without a confidence interval.
+* They report that near-unanimous judge agreement does not imply correctness (judges share failure modes)
+  and that ensembles do not fix it.
+* No rubric-style LLM judge, no reasoning models, no thinking-mode comparison, no trace analysis.
+
+### Others
+* Mu: compares six evaluators on two existing human-labelled sets (400 and 330 pairs, one victim model in
+  the second); accuracy/precision/recall/FPR only; no correction, no intervals.
+* Know Thy Judge: output style changes raise a judge's false-negative rate by up to 0.24; adversarial
+  attacks on the generation can make judges call 100% of harmful outputs safe. Workshop paper.
+* Collot et al. (EACL 2026 industry track, position): choose judges by balanced accuracy / Youden's J
+  because it does not depend on prevalence. Supports reporting sensitivity and specificity, not precision.
+* Miller: error bars, clustered standard errors, paired differences and power for evals. The right
+  statistical baseline for the interval part of any ASR comparison; cite and follow.
+* Chen: label-budget experiments in the general (non-safety) setting; no jailbreak data seen.
+
+### What this changes (the sharpest result of the whole review)
+The literature to date estimates judge quality **from judge-positives** (Schwinn) or from existing
+benchmark sets that mix everything (Gao, Mu), and corrects ASR with **precision alone**. Nobody in what
+I read estimates **recall / the miss rate in the population of judge-negatives**, and nobody reports an
+interval that covers it. Our design does exactly that: stratified human sampling with a deliberately large
+all-judges-say-no stratum, and cell-wise Bayesian bounds that stay valid when that stratum has zero
+positives (pilot: 0 of 23 labelled; a normal interval would have been falsely narrow).
+
+Proposed headline (to be tested by the 900 to 1,100 labels):
+> "Label the negatives: a stratified human audit that estimates what automated jailbreak judges miss,
+> gives attack-success rates with intervals that include false negatives, and shows which model/attack
+> comparisons survive."
+
+Priority after this pass:
+1. **I2 (miss bound for the all-judges-say-no stratum, stratified sampling, interval for the corrected
+   ASR)** is now the leading contribution, because it is exactly what Schwinn says nobody labels.
+2. **I1 (per-cell sensitivity and specificity with delta-J)** becomes a supporting result: it reproduces
+   Schwinn's "error varies by cell" but with recall included and with intervals, on current models and
+   rubric-style judges.
+3. **I3 (signed, re-verifiable evaluation records)** stays as the governance/reproducibility contribution.
+4. I4, I5, I7, I8 unchanged (supporting).
+
+Risks specific to this direction:
+* Our pilot shows the all-no stratum nearly empty of positives (0 of 23). If the full labels confirm this,
+  the finding is "judges jointly miss little here", which still matters but weakens a story about large
+  hidden misses; it would then contradict neither Schwinn (their problem is false positives) nor us.
+* The pilot has one annotator and 132 labels. The claim needs the full multi-annotator set.
+* Schwinn's data and ReliableBench are public; a comparison on their data (positives only) is possible but
+  cannot test false negatives. Do not claim superiority on their setting.
+* Venue: Schwinn is a very recent preprint (March 2026). If it is accepted at a strong venue, reviewers
+  will ask for a direct comparison; budget for it.
