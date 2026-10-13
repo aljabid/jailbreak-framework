@@ -1,0 +1,34 @@
+{
+  "expires_at": "2027-03-31T23:59:59Z",
+  "grant_id": "JOURNAL-2026-STUDY-03",
+  "issued_at": "2026-10-13T00:00:00Z",
+  "issued_by": "aljabid444@gmail.com",
+  "max_requests": 50000,
+  "models": [
+    "llama3.1:8b",
+    "qwen2.5:7b",
+    "mistral:7b",
+    "phi4",
+    "qwen2.5:14b",
+    "gemma3:27b",
+    "mistral-small:24b",
+    "qwen2.5:32b"
+  ],
+  "not_before": "2026-10-13T00:00:00Z",
+  "providers": [
+    "local"
+  ],
+  "schema_version": "1.0",
+  "signature": "f5724541d49cfcecd25bd15e1f1b6ad4984987d4c1ea6a2b46312850f50220de",
+  "strategies": [
+    "roleplay",
+    "instruction_override",
+    "encoding_attack",
+    "token_smuggling",
+    "fictional_framing",
+    "multi_turn"
+  ],
+  "target_ids": [
+    "journal-study"
+  ]
+}
