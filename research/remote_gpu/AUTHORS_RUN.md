@@ -17,7 +17,6 @@ machine, record the answers, and score them. The study measures how reliable aut
 * Do the setup and `prepare` first, then `run`. Report to me after `prepare` and when `run` finishes.
 * Do not change any settings, prompts or models; the study depends on them being fixed.
 * If something unexpected happens, stop and message me instead of working around it.
-* Contact: `<name, phone, email>`
 
 ## The only thing that does not come from GitHub
 
