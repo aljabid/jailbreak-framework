@@ -168,6 +168,7 @@ def main_cmd(model: str, args: argparse.Namespace, out: Path, n: int | None,
         "JBF_MODEL_MAX_TOKENS": "320",
         "JBF_MODEL_TIMEOUT": "600",
         "JBF_MODEL_RATE_LIMIT_DELAY": "0",
+        "JBF_FLUSH_EVERY": "500",  # batch the result-file writes (per-record rewrites are O(n^2))
     })
     cmd = [sys.executable, "main.py", "run", "--provider", "local", "--local-mode", "ollama",
            "--ollama-base-url", OLLAMA, "--model-name", model, "--seed", "42",
@@ -206,7 +207,7 @@ def attack(model: str, args: argparse.Namespace) -> bool:
     return True
 
 
-def estimate(models: list[str], args: argparse.Namespace) -> None:
+def estimate(models: list[str], args: argparse.Namespace) -> list[tuple[str, float, float]]:
     """Time a small real run per model and project the hours for the requested N."""
     total_prompts = corpus_size(args.prompts)
     n = min(args.n, total_prompts) if args.n else total_prompts
@@ -233,7 +234,7 @@ def estimate(models: list[str], args: argparse.Namespace) -> None:
         note = "  (answers were cached; speed is understated)" if per < 0.05 else ""
         print(f"  {m}: {per:.2f} s/attack -> {per * attacks / 3600:.1f} h{note}", flush=True)
     if not rows:
-        return
+        return rows
     total = sum(r[2] for r in rows)
     print(f"\n{'model':<22}{'s/attack':>10}{'hours':>9}")
     for m, per, h in rows:
@@ -243,6 +244,7 @@ def estimate(models: list[str], args: argparse.Namespace) -> None:
         fits = args.hours / total * n if total else 0
         verdict = "fits" if total <= args.hours else f"does NOT fit; about N={int(fits)} would"
         print(f"\nBudget {args.hours} h for generation: N={n} {verdict}.")
+    return rows
 
 
 def guard_all(models: list[str]) -> None:
@@ -267,6 +269,11 @@ def package(models: list[str]) -> Path:
             g = GUARD_OUT / f"{p.stem}_lg3_8b.json"
             if g.exists():
                 z.write(g, "judge_out/" + g.name)
+        # data-version records: counts and hashes only, no prompt text
+        for name in ("fetch_manifest.json", "corpus_manifest.json"):
+            mpath = ROOT / "research" / "data_journal" / name
+            if mpath.exists():
+                z.write(mpath, "manifests/" + name)
     return zpath
 
 
