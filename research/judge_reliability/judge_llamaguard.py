@@ -28,7 +28,7 @@ import urllib.request
 from pathlib import Path
 
 MODEL = os.environ.get("JBF_GUARD_MODEL", "llama-guard3:1b")
-URL = "http://localhost:11434/api/generate"
+URL = os.environ.get("OLLAMA_HOST_URL", "http://localhost:11434") + "/api/generate"
 SIZE = MODEL.split(":")[-1]
 SUFFIX = f"lg3_{SIZE}"
 OUT_DIR = Path(__file__).parent / "out"
