@@ -15,7 +15,8 @@ disagree with humans, so that fact alone is not new. The project asks how to mea
 which scientific conclusions survive a change of judge.
 
 1. **RQ1.** How large and how uneven is the error of judge-based ASR across target models and attack
-   strategies, and how much of the truth sits in the stratum that every judge calls safe?
+   strategies, including the **false negatives** that earlier audits never labelled, and how much of the
+   truth sits in the stratum that every judge calls safe?
 2. **RQ2.** Can a stratified human sample plus several judges give a calibrated ASR with an interval
    that holds up (coverage near 95%), and how many human labels does that take?
 3. **RQ3.** Which conclusions change with the judge: significance of model differences, size trends,
@@ -29,7 +30,7 @@ The paper extends the CSAM-2026 conference paper into a journal article.
 
 | Topic | Decision |
 |---|---|
-| Main contribution | calibrated, uncertainty-aware ASR protocol (C1 in `NOVELTY.md`); conclusion-stability audit (C2) and reasoning-era configuration audit (C3) support it |
+| Main contribution | "Label the negatives" (`LITERATURE_REVIEW.md` section 7): a stratified human audit with a large all-judges-say-no stratum that estimates what judges miss and gives ASR intervals including false negatives (I2); per-cell sensitivity/specificity with delta-J (I1); signed, re-verifiable evaluation records (I3). Conclusion-stability audit (C2), reasoning-era configuration audit (C3) and the released labels (C4) support it |
 | Hardware | one RTX 5090 (32 GB); no rented GPU; target models up to about 32B |
 | GPU budget | 70 to 80 GPU-hours (generation, reasoning arm, judging, buffer) |
 | Models | current-generation open models plus two older anchors (section 4) |
@@ -132,7 +133,8 @@ fictional_framing, multi_turn), seed 42, temperature 0. No new attack methods ar
 | E1 | main matrix: 8 models x first N prompts x 6 strategies x 1 variation | the data for everything | GPU, `study.py run` | ready |
 | E2 | judge comparison: raw ASR per judge, bootstrap CIs, kappa, McNemar | RQ1 | laptop, `analyze_agreement.py`, `summarize.py` | done on old data |
 | E3 | human labelling by the stratified design of section 7, three annotators | RQ1, RQ2 | `build_labeling_sheet.py`, `label.html`, `analyze_labels.py` | design done, labels to do |
-| E4 | calibrated ASR, per-cell judge error, coverage study, label-budget curves | RQ1, RQ2 | `calibrated_asr.py` (to extend) | prototype |
+| E4 | calibrated ASR with false negatives, per-cell sensitivity/specificity and delta-J, coverage study, label-budget curves; use the PPI++/EIF estimators of Chen et al. and Miller's error-bar rules instead of inventing estimators | RQ1, RQ2 | `calibrated_asr.py` (to extend) | prototype |
+| E10 | verifiable record: signed manifest of prompts, model tags, seeds, judge versions and label hashes that lets a reader re-verify a reported ASR | contribution I3 | framework evidence chain (to extend) | not started |
 | E5 | conclusion stability: significance of model differences, size trends, strategy rankings under every judge | RQ3 | `conclusion_stability.py` | done on old data |
 | E6 | reasoning arm and configuration audit: thinking on/off, token cap, judge input (answer vs trace) | RQ4 | GPU + laptop | ready |
 | E7 | control arm: XSTest safe prompts, judge false-positive rate | RQ1 | GPU + laptop | importer ready, run script to do |
@@ -143,12 +145,13 @@ fictional_framing, multi_turn), seed 42, temperature 0. No new attack methods ar
 
 The first 132 labels (one annotator, disagreement-weighted) validate judges but cannot support ASR
 estimation, because the stratum that every judge calls safe is 82% of the population and had 0 positives
-among 23 labels. Target set (about 900 to 1,100 items):
+among 23 labels. Earlier audits (Schwinn et al. 2026) labelled judge-positives only, so this stratum is the
+study's distinctive data. Target set (about 950 to 1,150 items):
 
 | Stratum | Labels |
 |---|---|
-| all judges say no | 300 |
-| judges disagree | 400 |
+| all judges say no (the new, central stratum: nobody has labelled it at scale) | 400 |
+| judges disagree | 350 |
 | all judges say yes | 60 |
 | controls (XSTest safe) | 150 |
 | coverage | at least 15 per (model x strategy) cell, spread across the above |
@@ -193,7 +196,8 @@ Only labels, aggregate statistics and figures are published. Raw answers move pr
 1. Three annotators: who, and how the 900 to 1,100 items are split.
 2. Ethics approval or exemption for the annotators (through the supervisor).
 3. Final N for E1, from the measured speed.
-4. Venue, after the full literature review in `NOVELTY.md` section 7.
+4. Venue, after the remaining reading listed in `LITERATURE_REVIEW.md` section 7 (Lee, Chen, MultiBreak and
+   Chain of Risk were only keyword-scanned). Schwinn et al. is the closest competitor; plan a direct comparison.
 5. Optional extensions: E9 and published attack baselines.
 
 ## 12. Rules for everyone

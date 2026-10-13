@@ -1,5 +1,16 @@
 # Novelty analysis and contribution plan (journal paper)
 
+> **Superseded in part by `LITERATURE_REVIEW.md` sections 6 and 7 (2026-10-13), which come from reading the
+> key papers in full. Current position:** the plain "judges disagree" claim, generic bias-corrected ASR
+> (Lee, Chen, Fiedler) and "judge error varies by victim model and attack" (Schwinn, Chouldechova) are all
+> established. The defensible gap is that existing audits label **judge-positives only** and correct ASR by
+> **precision alone**; nobody found estimates what judges **miss** or reports an interval that includes it.
+> Headline: *label the negatives.* Contribution order is now: **I2** (stratified audit with a large
+> all-judges-say-no stratum, miss-rate bound, interval for the corrected ASR) first; **I1** (per-cell
+> sensitivity/specificity with delta-J) second; **I3** (signed re-verifiable evaluation records) third;
+> C2 (conclusion stability), C3 (reasoning-era configuration) and C4 (resources) support. The sections
+> below are the earlier analysis and are kept for the evidence they hold.
+
 Status: working document for the authors. Literature read at **abstract level** through web
 search on 2026-10-13; every "nobody has done X" below is a claim to re-verify with a full
 literature review before submission. The field moved fast in 2026 (five directly relevant
