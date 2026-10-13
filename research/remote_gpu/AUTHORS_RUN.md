@@ -1,30 +1,29 @@
 # Running the study on the lab GPU machine
 
-Thank you for helping. The work runs in stages with a total budget of **70 to 80 GPU-hours**
-(about 3 days of wall time) and about **130 GB of disk**. You start each stage with one
-command and check on it now and then. `TASK.md` has the same plan in a form that can be
-handed to a script runner; `STUDY_PLAN.md` explains what the whole project is for.
+Thank you for helping. After setup the whole study is **two commands**. It runs for about
+**3 days** inside a total budget of **70 to 80 GPU-hours**, needs about **130 GB** of disk, and
+you only check on it now and then. `TASK.md` has the same plan in a form that can be handed
+to a script runner; `STUDY_PLAN.md` explains what the whole project is for.
 
 What this is: an authorised red-teaming measurement study (supervisor-approved). The scripts
-send prompts from public research benchmarks to open models running locally on this machine,
-record the answers, and score them. The study measures how reliable automated "jailbreak
-judges" are; it does not publish any harmful text.
+download public safety benchmarks, send their prompts to open models running locally on this
+machine, record the answers, and score them. The study measures how reliable automated
+"jailbreak judges" are; it does not publish any harmful text.
 
 ## Author's instructions
 
 *(Written by the researcher. Edit this section to add anything specific before sending.)*
 
-* Do the smoke test first, then the budget estimate, then stage 1. Report after each stage.
+* Do the setup and `prepare` first, then `run`. Report to me after `prepare` and when `run` finishes.
 * Do not change any settings, prompts or models; the study depends on them being fixed.
 * If something unexpected happens, stop and message me instead of working around it.
 * Contact: `<name, phone, email>`
 
-## What you need from the researcher (sent privately, not on GitHub)
+## The only thing that does not come from GitHub
 
-1. The `signing key`, a 64-character string. It goes into `.env` (setup step 3).
-2. `journal_grant_v3_signed.json` in `research/grants/` (it may already arrive with `git pull`).
-3. `journal_full_corpus.json` in `research/data_journal/`.
-4. For the optional validation part: a folder `validate_in/` with response files.
+The **signing key**, a 64-character string the researcher sends you privately (not in any
+chat that is shared or stored publicly). Everything else, including the signed grant, comes
+with the repository or is downloaded by the scripts.
 
 ## One-time setup
 
@@ -45,45 +44,40 @@ judges" are; it does not publish any harmful text.
    JBF_AUTHORIZATION_SIGNING_KEY=PASTE_THE_KEY_HERE
    ```
 
-4. Put the files from the researcher in place (create `research/data_journal` if needed).
-5. Start Ollama with parallel requests and, if the default drive is small, a model folder on a
+4. Start Ollama with parallel requests and, if the default drive is small, a model folder on a
    big disk. Set `OLLAMA_NUM_PARALLEL=4` and `OLLAMA_MODELS=<folder with 150 GB free>`
    **before** starting Ollama. Do not expose Ollama to the network.
 
-## The stages
+## Command 1: prepare (about 15 minutes plus downloads)
 
-Each script is resumable: after any stop, run the same command again. On Linux use `tmux`
-or `screen`; keep the machine awake; avoid other heavy GPU jobs.
+```
+uv run python research/remote_gpu/study.py prepare --accept-terms
+```
 
-1. **Smoke test (2 minutes)**: must end with `Smoke test passed`.
+It downloads the public benchmark files, builds the prompt corpus and runs a 2-minute smoke
+test. `--accept-terms` means **you** confirm you have read each dataset's terms (print them
+with `uv run python scripts/fetch_benchmarks.py --list`) and will use the files only for
+authorised safety evaluation. One dataset (SORRY-Bench) is gated on Hugging Face: if you have
+an account that accepted its terms, set `HF_TOKEN` first; otherwise it is skipped and the study
+still works. It ends with `Ready` when everything is in order.
 
-   ```
-   uv run python research/remote_gpu/run_all.py --smoke
-   ```
+## Command 2: run (about 3 days)
 
-2. **Budget estimate (about 15 minutes)**: times a small real run per model and projects hours.
-   Send the printed table to the researcher, who may choose a smaller N.
+```
+uv run python research/remote_gpu/study.py run --budget-hours 75
+```
 
-   ```
-   uv run python research/remote_gpu/run_all.py --estimate --n 1088 --hours 45
-   ```
+It downloads the models (the first time), measures the real speed of each, chooses how many
+prompts fit the budget, and works in stages (first 300 prompts, then 700, then as many as the
+budget allows). After each stage it scores the answers with Llama Guard and, on a sample, with
+two local LLM judges, and rewrites the zip files below. Check progress any time with
+`uv run python research/remote_gpu/study.py status`.
 
-3. **Stage 1**: generate answers for the first 300 prompts, then judge them.
+It is resumable: after any stop (crash, reboot, power cut) run the same command again. On Linux
+use `tmux` or `screen`; keep the machine awake; avoid other heavy GPU jobs.
 
-   ```
-   uv run python research/remote_gpu/run_all.py --n 300
-   uv run python research/remote_gpu/judge_all.py --judge-n 250
-   ```
-
-   Report to the researcher before going on.
-
-4. **Stage 2**: `uv run python research/remote_gpu/run_all.py --n 700` (reuses stage 1).
-5. **Stage 3** (only if budget remains and the researcher agrees): `uv run python research/remote_gpu/run_all.py`.
-6. **Validation (optional, under 1 hour)**:
-   `uv run python research/remote_gpu/judge_all.py --files validate_in/*.json`
-   (on Windows PowerShell list the files by name instead of `*.json`).
-
-Progress at any time: `run_all.py --status` and `judge_all.py --status`.
+Optional validation: if the researcher sent files, put them in a folder `validate_in/` before
+`run`; they are processed automatically at the end.
 
 ## When it finishes
 
@@ -97,14 +91,15 @@ answers inside contain harmful content produced by the models.
 
 * commit, push, or post anything from `outputs/`, `research/data_journal/`, `validate_in/`, or `.env`;
 * change the prompts, models, seed, or settings;
-* share the signing key or the corpus file with anyone else.
+* share the signing key with anyone else.
 
 ## Troubleshooting
 
 | Problem | What to do |
 |---|---|
+| `prepare` says a dataset could not be fetched | put the file at the printed path by hand and run `prepare` again |
 | `Authorization signature is invalid` | `.env` key is wrong or has spaces; paste it again with nothing around it |
-| `model is outside scope` | the grant file is old or wrong; get the latest `journal_grant_v3_signed.json` |
+| `model is outside scope` | the grant file is old; run `git pull` |
 | `could not pull ...` | model name changed on ollama.com/library; tell the researcher which one |
 | Out of memory | something else is using the GPU; check `nvidia-smi` |
 | Very slow | the GPU is not being used; check `nvidia-smi` while it runs |

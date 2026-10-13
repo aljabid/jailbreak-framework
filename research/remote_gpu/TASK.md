@@ -19,34 +19,28 @@ scores are compared with human labels. The master plan is `research/STUDY_PLAN.m
   harmful text. This is expected, authorised measurement work. You do **not** need to read
   the answers.
 
-## 2. Your task and budget
+## 2. Your task
 
-Run the scripts in this folder on this machine (NVIDIA RTX 5090, 32 GB). The total budget
-is **70 to 80 GPU-hours**. Plan it as:
+Run two commands on this machine (NVIDIA RTX 5090, 32 GB), within a budget of **70 to 80
+GPU-hours** (about 3 days). The scripts do everything else: downloading datasets and models,
+building the corpus, measuring speed, choosing how many prompts fit the budget, running in
+stages, scoring, and writing the result zips. You are done when:
 
-| Part | Script | Budget |
-|---|---|---|
-| A. Generate answers from 8 models | `run_all.py` | about 45 h |
-| B. Llama Guard scoring of everything | `run_all.py` (automatic) | about 6 h |
-| C. Local LLM judges on a sample | `judge_all.py` | about 18 h |
-| D. Validate the local judges (optional but recommended) | `judge_all.py --files` | under 1 h |
-| Buffer | | about 8 h |
-
-The prompt corpus is ordered so that any prefix is a representative sample, so the work is
-done in **stages** and is valid wherever the budget ends. Never skip ahead: finish a stage
-(all models) before starting the next.
-
-You are done when the human has the zip files named in section 7 and the final report.
+1. `uv run python research/remote_gpu/study.py run ...` has finished and printed `Finished`; and
+2. the two files `outputs/results_for_researcher.zip` and `outputs/judges_for_researcher.zip`
+   exist; and
+3. you have sent the human the short report in section 7.
 
 ## 3. Hard rules
 
 * **Do not read, print, open, summarise, or paste the contents of any file in `outputs/`,
   `research/data_journal/`, `validate_in/` or `research/judge_reliability/out/*.json`.** To
-  check progress use only `--status`, or count records without printing text, e.g.
-  `uv run python -c "import json;print(len(json.load(open('outputs/FILE.json',encoding='utf-8'))))"`.
-  Do not echo model answers into the conversation or logs.
+  check progress use only `study.py status`. Do not echo model answers into the conversation or logs.
 * **Never print, log, or commit the signing key or the `.env` file.** Ask the human to create
   `.env` themselves (section 4, step 3) so the key never passes through you.
+* **Never pass `--accept-terms` yourself.** It is the human operator's confirmation that they have
+  read the datasets' terms. Show the human the output of `uv run python scripts/fetch_benchmarks.py --list`
+  and let them run `prepare` with the flag, or tell you explicitly to.
 * **Never commit or push anything** from `outputs/`, `research/data_journal/` or `.env`. Do not
   run `git add -A`. You normally have no reason to commit anything at all.
 * **Do not change** prompts, models, the model list, seed, temperature, token limit, variations
@@ -70,45 +64,36 @@ You are done when the human has the zip files named in section 7 and the final r
 3. **Ask the human** to create a file named `.env` in the repository root containing exactly
    one line, `JBF_AUTHORIZATION_SIGNING_KEY=<key>`, using the key the researcher sent them
    privately. Wait until they confirm. Do not ask them to paste the key to you.
-4. **Ask the human** to confirm these files are in place (they come from the researcher):
-   `research/grants/journal_grant_v3_signed.json` and
-   `research/data_journal/journal_full_corpus.json`. (The grant may already be in the
-   repository after `git pull`; the corpus is never in the repository.) For part D also
-   `validate_in/` with the response files the researcher sends.
-5. Start Ollama with parallel requests enabled and storage on a big disk. Models need about
-   130 GB (8 targets plus 3 judge models). Set `OLLAMA_NUM_PARALLEL=4` and, if the default
-   drive is small, `OLLAMA_MODELS` to a folder with 150 GB free, then start Ollama.
+4. Start Ollama with parallel requests enabled and storage on a big disk. Everything needs
+   about 130 GB. Set `OLLAMA_NUM_PARALLEL=4` and, if the default drive is small, ask the human
+   for a folder with 150 GB free and set `OLLAMA_MODELS` to it, then start Ollama.
+5. Optional: if the human has a Hugging Face account that accepted the SORRY-Bench terms, they
+   set `HF_TOKEN` in the environment. Otherwise that one dataset is skipped; that is fine.
 
 ## 5. Run
 
-1. **Smoke test (2 minutes).** `uv run python research/remote_gpu/run_all.py --smoke`.
-   It must finish with `Smoke test passed`. If not, go to section 6.
-2. **Calibrate the budget (about 15 minutes).** Run
-   `uv run python research/remote_gpu/run_all.py --estimate --n 1088 --hours 45`.
-   It times a small real run per model and prints projected hours. Send the printed table to
-   the human. If the projection for all prompts exceeds 45 h, the human will tell you which N
-   to use; use that N below instead of the values written here.
-3. **Stage 1.** Generate: `... run_all.py --n 300`. Then judge:
-   `... judge_all.py --judge-n 250`. Both are resumable.
-4. **Stage 2.** Only after stage 1 is complete and reported: `... run_all.py --n 700`
-   (reuses stage 1 answers), then Llama Guard runs again automatically for the new ones.
-5. **Stage 3.** Only if budget remains and the human agrees: `... run_all.py` (all prompts).
-6. **Part D (optional).** `... judge_all.py --files validate_in/*.json`.
-7. Run long jobs as **background processes** that survive your session (tmux/screen on Linux,
-   `Start-Process` on Windows), logging to a file. Do not hold a foreground command open for hours.
-   Every 30 to 60 minutes run `... run_all.py --status` (and `judge_all.py --status`) and read
-   only the last few lines of the log. Keep the machine awake and avoid other heavy GPU jobs.
-8. All scripts are resumable: if anything stops (crash, reboot, power cut), run the same
-   command again; finished work is skipped or replayed from cache.
+1. **Prepare.** Ask the human to run (or to tell you to run) 
+   `uv run python research/remote_gpu/study.py prepare --accept-terms`. It ends with `Ready`.
+   If a dataset cannot be fetched it prints the path to place the file by hand; ask the human.
+2. **Run** as a background process that survives your session (tmux/screen on Linux,
+   `Start-Process` on Windows), logging to a file:
+   `uv run python research/remote_gpu/study.py run --budget-hours 75`.
+   Do not hold a foreground command open for hours.
+3. **Monitor** every 30 to 60 minutes with `uv run python research/remote_gpu/study.py status`,
+   and read only the last few lines of the log. Keep the machine awake; avoid other heavy GPU jobs.
+4. The scripts are resumable. If anything stops (crash, reboot, power cut), run the same
+   command again. Report to the human after `prepare`, after each stage, and at the end.
+5. If the human supplied a `validate_in/` folder, `run` processes it at the end automatically.
 
 ## 6. When something goes wrong
 
 | Symptom | Action |
 |---|---|
 | `Cannot start:` followed by a list | fix exactly what it lists (missing file, Ollama not running, key not set) |
+| a dataset could not be fetched | ask the human to place the file at the printed path, then rerun `prepare` |
 | `could not pull <model>` | model name may have changed on ollama.com/library; report the name to the human, do not substitute another model |
-| `Authorization signature is invalid` | stop; ask the human to re-check the key in `.env` (no spaces, 64 characters) and that the grant file is the latest |
-| `model is outside scope` or `not active` | stop; the grant file is wrong or old; ask the human to get the latest from the researcher |
+| `Authorization signature is invalid` | stop; ask the human to re-check the key in `.env` (no spaces, 64 characters) and run `git pull` for the latest grant |
+| `model is outside scope` or `not active` | stop; run `git pull`; if it persists ask the human |
 | out of memory / very slow | check `nvidia-smi`; another process may be using the GPU; ask the human before killing anything |
 | anything else unexpected | stop and report the last 30 lines of output; do not improvise fixes |
 
@@ -116,11 +101,11 @@ If you hit an error you cannot resolve in two attempts, stop and ask the human.
 
 ## 7. Reports and hand-over (short, no model text)
 
-After each stage send the human: the `--status` output, hours used so far, any model that
-needed a restart, and any warnings. At the end tell the human to send these files to the
+Send the human: the output of `study.py status`, hours used, any model that needed a restart or
+could not be used, and any warnings. At the end tell the human to send these files to the
 researcher **privately** (not through GitHub):
 
-* `outputs/results_for_researcher.zip` (answers and Llama Guard verdicts);
+* `outputs/results_for_researcher.zip` (answers, Llama Guard verdicts, data-version records);
 * `outputs/judges_for_researcher.zip` (LLM judge verdicts only).
 
 The human should delete the model folder, `outputs/` and `validate_in/` after the researcher

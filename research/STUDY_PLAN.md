@@ -42,7 +42,8 @@ Research questions:
 |---|---|
 | Framework (attacks, judges, authorisation, evidence) | done |
 | 9 models x 108 attacks, 4 judges, pooled analysis (n=924) | done |
-| `--variations`, `--n` staging, resumable GPU scripts (`run_all.py`, `judge_all.py`) | done, tested against a stub server |
+| One-command driver `study.py` (prepare / run / status), dataset fetcher, budget-aware stages, local judges | done, tested end to end against a stub server |
+| Result-file writes batched (the old per-record rewrite was quadratic and would have wasted hours) | done |
 | Corpus builder with cross-source de-duplication and balanced ordering | done; 1,088 unique prompts from 4 sources so far |
 | SORRY-Bench and XSTest importers | done; the files still need to be downloaded |
 | First human annotator (132 items), judge ranking | done |
@@ -112,8 +113,11 @@ breadth but are not needed for the core result and are outside the current budge
 
 ## 5. Datasets (public benchmarks of harmful requests)
 
-Downloaded by the authors themselves from the original sources and imported with
-`scripts/import_external_prompts.py` (the script never downloads anything):
+Fetched from the original sources by the lab author with `study.py prepare --accept-terms`
+(see `scripts/fetch_benchmarks.py --list` for sources, terms and citations; the flag is the
+operator's confirmation that the terms were read) and imported with
+`scripts/import_external_prompts.py`. Every file's SHA-256 is recorded in a manifest that
+travels with the results, so the exact data versions can be reported:
 
 | Dataset | Part used | Approx. size | Status |
 |---|---|---|---|
