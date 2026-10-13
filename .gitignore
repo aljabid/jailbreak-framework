@@ -83,3 +83,5 @@ csam2026/
 # harmful raw model responses - kept locally, never published
 research/data_journal/
 research/judge_reliability/labeling/
+outputs/*.zip
+outputs/*.jsonl

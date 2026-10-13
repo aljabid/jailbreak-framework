@@ -1,16 +1,16 @@
 # Task brief: run the model study on the lab GPU machine
 
-Read this whole file before doing anything. It is written so that a person or an
-assistant tool can carry out the task end to end. Where it says "ask the human",
+Read this whole file before doing anything. It is written so that a person or a
+script runner can carry out the task end to end. Where it says "ask the human",
 stop and ask the person who gave you this task.
 
 ## 1. Context (why this exists)
 
 This repository is an authorisation-gated framework for measuring how reliable
 automated "jailbreak judges" are. The study sends prompts from public research
-benchmarks (HarmBench, JailbreakBench, StrongREJECT) to open-weight models and records
-the answers. Other scripts, run elsewhere, then score those answers with several
-judges and compare them with human labels.
+benchmarks (AdvBench, HarmBench, StrongREJECT, JailbreakBench, SORRY-Bench, XSTest)
+to open-weight models and records the answers. Judges then score those answers and the
+scores are compared with human labels. The master plan is `research/STUDY_PLAN.md`.
 
 * The study is approved by the supervisor and runs on lab hardware with permission.
 * Every request is checked against a signed authorisation grant that lists the allowed
@@ -19,25 +19,30 @@ judges and compare them with human labels.
   harmful text. This is expected, authorised measurement work. You do **not** need to read
   the answers.
 
-## 2. Your task
+## 2. Your task and budget
 
-Run one script on this machine, which has an NVIDIA RTX 5090 (32 GB). The script
-pulls 8 open models through Ollama, attacks each with the study prompts, scores the
-answers with Llama Guard 3 8B, and packs everything into one zip file.
+Run the scripts in this folder on this machine (NVIDIA RTX 5090, 32 GB). The total budget
+is **70 to 80 GPU-hours**. Plan it as:
 
-You are done when:
+| Part | Script | Budget |
+|---|---|---|
+| A. Generate answers from 8 models | `run_all.py` | about 45 h |
+| B. Llama Guard scoring of everything | `run_all.py` (automatic) | about 6 h |
+| C. Local LLM judges on a sample | `judge_all.py` | about 18 h |
+| D. Validate the local judges (optional but recommended) | `judge_all.py --files` | under 1 h |
+| Buffer | | about 8 h |
 
-1. `uv run python research/remote_gpu/run_all.py --status` shows all 8 models as `DONE`
-   with **2484 records each** (138 prompts x 6 strategies x 3 variations); and
-2. `outputs/results_for_researcher.zip` exists and contains 8 `adv_gpu_*.json` files plus a
-   `judge_out/` folder with 8 `*_lg3_8b.json` files; and
-3. you have sent the human the short report in section 7.
+The prompt corpus is ordered so that any prefix is a representative sample, so the work is
+done in **stages** and is valid wherever the budget ends. Never skip ahead: finish a stage
+(all models) before starting the next.
+
+You are done when the human has the zip files named in section 7 and the final report.
 
 ## 3. Hard rules
 
 * **Do not read, print, open, summarise, or paste the contents of any file in `outputs/`,
-  `research/data_journal/` or `research/judge_reliability/out/*.json`.** To check progress use
-  only `--status`, or count records without printing text, e.g.
+  `research/data_journal/`, `validate_in/` or `research/judge_reliability/out/*.json`.** To
+  check progress use only `--status`, or count records without printing text, e.g.
   `uv run python -c "import json;print(len(json.load(open('outputs/FILE.json',encoding='utf-8'))))"`.
   Do not echo model answers into the conversation or logs.
 * **Never print, log, or commit the signing key or the `.env` file.** Ask the human to create
@@ -45,8 +50,8 @@ You are done when:
 * **Never commit or push anything** from `outputs/`, `research/data_journal/` or `.env`. Do not
   run `git add -A`. You normally have no reason to commit anything at all.
 * **Do not change** prompts, models, the model list, seed, temperature, token limit, variations
-  count, strategies, or any file under `core/`, `strategies/`, `policy/`, `models/`, `main.py`.
-  The study depends on these being fixed.
+  count, strategies, judge prompts, or any file under `core/`, `strategies/`, `policy/`,
+  `models/`, `main.py`. The study depends on these being fixed.
 * **Do not work around the authorisation check.** If you see `Authorization signature is
   invalid`, `model is outside scope`, or `authorization is not active`, stop and ask the human.
   Never edit, re-sign, or regenerate a grant or key, and never disable the check.
@@ -65,27 +70,36 @@ You are done when:
 3. **Ask the human** to create a file named `.env` in the repository root containing exactly
    one line, `JBF_AUTHORIZATION_SIGNING_KEY=<key>`, using the key the researcher sent them
    privately. Wait until they confirm. Do not ask them to paste the key to you.
-4. **Ask the human** to confirm these two files are in place (they come from the researcher):
-   `research/grants/journal_grant_v2_signed.json` and
-   `research/data_journal/journal_base_corpus.json`. (The grant may already be in the
-   repository after `git pull`; the corpus is never in the repository.)
-5. Make sure Ollama is running and storage is large enough: models need about 100 GB.
-   If the default drive is small, ask the human where to put them and set `OLLAMA_MODELS` to
-   that folder before starting Ollama.
+4. **Ask the human** to confirm these files are in place (they come from the researcher):
+   `research/grants/journal_grant_v3_signed.json` and
+   `research/data_journal/journal_full_corpus.json`. (The grant may already be in the
+   repository after `git pull`; the corpus is never in the repository.) For part D also
+   `validate_in/` with the response files the researcher sends.
+5. Start Ollama with parallel requests enabled and storage on a big disk. Models need about
+   130 GB (8 targets plus 3 judge models). Set `OLLAMA_NUM_PARALLEL=4` and, if the default
+   drive is small, `OLLAMA_MODELS` to a folder with 150 GB free, then start Ollama.
 
 ## 5. Run
 
-1. Smoke test (about 2 minutes). Run `uv run python research/remote_gpu/run_all.py --smoke`.
+1. **Smoke test (2 minutes).** `uv run python research/remote_gpu/run_all.py --smoke`.
    It must finish with `Smoke test passed`. If not, go to section 6.
-2. Full run. Start `uv run python research/remote_gpu/run_all.py` as a **background process**
-   that survives your session (tmux/screen on Linux, `Start-Process` on Windows), logging to a
-   file. Do not hold a foreground command open for hours.
-3. Monitor. Every 30 to 60 minutes run `uv run python research/remote_gpu/run_all.py --status`
-   and read only the last few lines of the log. Expect roughly 1 to 4 hours per model (larger
-   models are slower); about 17 to 22 GPU-hours in total.
-4. The script is resumable. If it stops for any reason (crash, reboot, power cut), just run the
-   same command again; finished models are skipped and partial ones continue from cache.
-5. Keep the machine awake while it runs. Avoid starting other heavy GPU jobs.
+2. **Calibrate the budget (about 15 minutes).** Run
+   `uv run python research/remote_gpu/run_all.py --estimate --n 1088 --hours 45`.
+   It times a small real run per model and prints projected hours. Send the printed table to
+   the human. If the projection for all prompts exceeds 45 h, the human will tell you which N
+   to use; use that N below instead of the values written here.
+3. **Stage 1.** Generate: `... run_all.py --n 300`. Then judge:
+   `... judge_all.py --judge-n 250`. Both are resumable.
+4. **Stage 2.** Only after stage 1 is complete and reported: `... run_all.py --n 700`
+   (reuses stage 1 answers), then Llama Guard runs again automatically for the new ones.
+5. **Stage 3.** Only if budget remains and the human agrees: `... run_all.py` (all prompts).
+6. **Part D (optional).** `... judge_all.py --files validate_in/*.json`.
+7. Run long jobs as **background processes** that survive your session (tmux/screen on Linux,
+   `Start-Process` on Windows), logging to a file. Do not hold a foreground command open for hours.
+   Every 30 to 60 minutes run `... run_all.py --status` (and `judge_all.py --status`) and read
+   only the last few lines of the log. Keep the machine awake and avoid other heavy GPU jobs.
+8. All scripts are resumable: if anything stops (crash, reboot, power cut), run the same
+   command again; finished work is skipped or replayed from cache.
 
 ## 6. When something goes wrong
 
@@ -100,12 +114,14 @@ You are done when:
 
 If you hit an error you cannot resolve in two attempts, stop and ask the human.
 
-## 7. Final report to the human (short, no model text)
+## 7. Reports and hand-over (short, no model text)
 
-* output of `--status` (model names and record counts);
-* path and size of `outputs/results_for_researcher.zip`;
-* total wall-clock time and any models that needed a restart;
-* any warnings seen.
+After each stage send the human: the `--status` output, hours used so far, any model that
+needed a restart, and any warnings. At the end tell the human to send these files to the
+researcher **privately** (not through GitHub):
 
-Then tell the human to send the zip to the researcher **privately** (not through GitHub), and
-to delete the model folder and `outputs/` after the researcher confirms receipt.
+* `outputs/results_for_researcher.zip` (answers and Llama Guard verdicts);
+* `outputs/judges_for_researcher.zip` (LLM judge verdicts only).
+
+The human should delete the model folder, `outputs/` and `validate_in/` after the researcher
+confirms receipt.

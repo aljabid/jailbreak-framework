@@ -1,28 +1,30 @@
 # Running the study on the lab GPU machine
 
-Thank you for helping. You run one script; it does the rest. Expect roughly
-**1 to 2 days of GPU time** (about 17 to 22 GPU-hours) and about **100 GB of disk**
-for the models. You only need to check on it now and then.
+Thank you for helping. The work runs in stages with a total budget of **70 to 80 GPU-hours**
+(about 3 days of wall time) and about **130 GB of disk**. You start each stage with one
+command and check on it now and then. `TASK.md` has the same plan in a form that can be
+handed to a script runner; `STUDY_PLAN.md` explains what the whole project is for.
 
-What this is: an authorised red-teaming measurement study (supervisor-approved).
-The script sends prompts from public research benchmarks to open models running
-locally on this machine, and records the answers. The study measures how
-reliable automated "jailbreak judges" are; it does not publish any harmful text.
+What this is: an authorised red-teaming measurement study (supervisor-approved). The scripts
+send prompts from public research benchmarks to open models running locally on this machine,
+record the answers, and score them. The study measures how reliable automated "jailbreak
+judges" are; it does not publish any harmful text.
 
 ## Author's instructions
 
 *(Written by the researcher. Edit this section to add anything specific before sending.)*
 
-* Do the smoke test first. Only start the full run once it passes.
+* Do the smoke test first, then the budget estimate, then stage 1. Report after each stage.
 * Do not change any settings, prompts or models; the study depends on them being fixed.
 * If something unexpected happens, stop and message me instead of working around it.
 * Contact: `<name, phone, email>`
 
 ## What you need from the researcher (sent privately, not on GitHub)
 
-1. `signing key`, a 64-character string. It goes into `.env` (step 3).
-2. `journal_grant_v2_signed.json`, to place in `research/grants/`.
-3. `journal_base_corpus.json`, to place in `research/data_journal/`.
+1. The `signing key`, a 64-character string. It goes into `.env` (setup step 3).
+2. `journal_grant_v3_signed.json` in `research/grants/` (it may already arrive with `git pull`).
+3. `journal_full_corpus.json` in `research/data_journal/`.
+4. For the optional validation part: a folder `validate_in/` with response files.
 
 ## One-time setup
 
@@ -43,48 +45,58 @@ reliable automated "jailbreak judges" are; it does not publish any harmful text.
    JBF_AUTHORIZATION_SIGNING_KEY=PASTE_THE_KEY_HERE
    ```
 
-4. Put the two files from the researcher in place:
-   `research/grants/journal_grant_v2_signed.json` and
-   `research/data_journal/journal_base_corpus.json`
-   (create the `research/data_journal` folder if it does not exist).
-5. Make sure Ollama is running (`ollama serve`, or it starts automatically as a service).
-   Do not expose it to the network.
-6. Put the model files on a big disk if the default drive is small:
-   set the environment variable `OLLAMA_MODELS` to a folder with 100 GB free **before**
-   starting Ollama.
+4. Put the files from the researcher in place (create `research/data_journal` if needed).
+5. Start Ollama with parallel requests and, if the default drive is small, a model folder on a
+   big disk. Set `OLLAMA_NUM_PARALLEL=4` and `OLLAMA_MODELS=<folder with 150 GB free>`
+   **before** starting Ollama. Do not expose Ollama to the network.
 
-## Smoke test (2 minutes): do this first
+## The stages
 
-```
-uv run python research/remote_gpu/run_all.py --smoke
-```
+Each script is resumable: after any stop, run the same command again. On Linux use `tmux`
+or `screen`; keep the machine awake; avoid other heavy GPU jobs.
 
-It must end with `Smoke test passed`. If it fails, send the researcher the last 30 lines of output.
+1. **Smoke test (2 minutes)**: must end with `Smoke test passed`.
 
-## Run the study
+   ```
+   uv run python research/remote_gpu/run_all.py --smoke
+   ```
 
-```
-uv run python research/remote_gpu/run_all.py
-```
+2. **Budget estimate (about 15 minutes)**: times a small real run per model and projects hours.
+   Send the printed table to the researcher, who may choose a smaller N.
 
-* It handles all models in turn, then scores them with Llama Guard, then writes
-  `outputs/results_for_researcher.zip`.
-* **You can stop it any time** (Ctrl+C, reboot, power cut). Run the same command again and it
-  continues where it stopped; finished models are skipped.
-* On Linux, run it inside `tmux` or `screen` so closing your terminal does not kill it.
-* Check progress without interrupting: `uv run python research/remote_gpu/run_all.py --status`
-* Keep the machine from sleeping while it runs.
-* Please avoid starting other heavy GPU jobs at the same time.
+   ```
+   uv run python research/remote_gpu/run_all.py --estimate --n 1088 --hours 45
+   ```
+
+3. **Stage 1**: generate answers for the first 300 prompts, then judge them.
+
+   ```
+   uv run python research/remote_gpu/run_all.py --n 300
+   uv run python research/remote_gpu/judge_all.py --judge-n 250
+   ```
+
+   Report to the researcher before going on.
+
+4. **Stage 2**: `uv run python research/remote_gpu/run_all.py --n 700` (reuses stage 1).
+5. **Stage 3** (only if budget remains and the researcher agrees): `uv run python research/remote_gpu/run_all.py`.
+6. **Validation (optional, under 1 hour)**:
+   `uv run python research/remote_gpu/judge_all.py --files validate_in/*.json`
+   (on Windows PowerShell list the files by name instead of `*.json`).
+
+Progress at any time: `run_all.py --status` and `judge_all.py --status`.
 
 ## When it finishes
 
-Send `outputs/results_for_researcher.zip` to the researcher **privately** (Drive link,
-email, or similar). The answers inside contain harmful content produced by the models.
+Send these two files to the researcher **privately** (Drive link, email, or similar). The
+answers inside contain harmful content produced by the models.
+
+* `outputs/results_for_researcher.zip`
+* `outputs/judges_for_researcher.zip`
 
 ## Please do not
 
-* commit, push, or post anything from `outputs/`, `research/data_journal/`, or `.env`;
-* change the prompts, models, seed, or settings (the study depends on them being fixed);
+* commit, push, or post anything from `outputs/`, `research/data_journal/`, `validate_in/`, or `.env`;
+* change the prompts, models, seed, or settings;
 * share the signing key or the corpus file with anyone else.
 
 ## Troubleshooting
@@ -92,9 +104,9 @@ email, or similar). The answers inside contain harmful content produced by the m
 | Problem | What to do |
 |---|---|
 | `Authorization signature is invalid` | `.env` key is wrong or has spaces; paste it again with nothing around it |
-| `model is outside scope` | the grant file is old or wrong; get the latest `journal_grant_v2_signed.json` |
+| `model is outside scope` | the grant file is old or wrong; get the latest `journal_grant_v3_signed.json` |
 | `could not pull ...` | model name changed on ollama.com/library; tell the researcher which one |
 | Out of memory | something else is using the GPU; check `nvidia-smi` |
 | Very slow | the GPU is not being used; check `nvidia-smi` while it runs |
 
-After the study, delete the model folder and `outputs/` from this machine.
+After the study, delete the model folder, `outputs/` and `validate_in/` from this machine.
