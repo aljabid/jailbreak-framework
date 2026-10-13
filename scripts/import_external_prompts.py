@@ -90,6 +90,24 @@ KNOWN_SOURCES: dict[str, dict[str, str]] = {
         "url": "https://huggingface.co/datasets/TrustAIRLab/in-the-wild-jailbreak-prompts",
         "license": "MIT (verify current terms at the source before redistribution).",
     },
+    "sorrybench": {
+        "name": "SORRY-Bench",
+        "citation": (
+            "Xie, Qi, Zeng et al. (2024), 'SORRY-Bench: Systematically Evaluating "
+            "Large Language Model Safety Refusal'"
+        ),
+        "url": "https://github.com/SORRY-Bench/sorry-bench",
+        "license": "Gated on Hugging Face; check the dataset card for current license terms.",
+    },
+    "xstest": {
+        "name": "XSTest",
+        "citation": (
+            "Rottger, Kirk, Vidgen et al. (2024), 'XSTest: A Test Suite for Identifying "
+            "Exaggerated Safety Behaviours in Large Language Models'"
+        ),
+        "url": "https://github.com/paul-rottger/exaggerated-safety",
+        "license": "Check the upstream repository for current license terms before redistribution.",
+    },
     "strongreject": {
         "name": "StrongREJECT",
         "citation": (
@@ -106,10 +124,15 @@ DEFAULT_COLUMNS: dict[str, dict[str, str]] = {
     "harmbench": {"text": "Behavior", "category": "SemanticCategory", "id": "BehaviorID"},
     "inthewild": {"text": "prompt", "category": "", "id": ""},
     "strongreject": {"text": "forbidden_prompt", "category": "category", "id": ""},
+    "sorrybench": {"text": "turns", "category": "category", "id": "question_id"},
+    "xstest": {"text": "prompt", "category": "type", "id": "id"},
 }
 
 
 def load_rows(path: Path) -> list[dict[str, Any]]:
+    if path.suffix.lower() == ".jsonl":
+        with path.open(encoding="utf-8-sig") as handle:
+            return [json.loads(line) for line in handle if line.strip()]
     if path.suffix.lower() == ".json":
         data = json.loads(path.read_text(encoding="utf-8"))
         if isinstance(data, dict):
@@ -135,13 +158,22 @@ def convert(
     id_prefix: str,
     default_category: str,
     default_severity: str,
+    row_filter: dict[str, str] | None = None,
 ) -> list[dict[str, Any]]:
     source_meta = KNOWN_SOURCES.get(source_key, {"name": source_key, "citation": "", "url": "", "license": ""})
     imported_at = datetime.now(timezone.utc).isoformat()
 
     records: list[dict[str, Any]] = []
     for i, row in enumerate(rows, start=1):
-        text = str(row.get(text_column, "")).strip()
+        if row_filter and any(
+            str(row.get(key, "")).strip().lower() != want.strip().lower()
+            for key, want in row_filter.items()
+        ):
+            continue
+        value = row.get(text_column, "")
+        if isinstance(value, (list, tuple)):  # e.g. SORRY-Bench stores the prompt in "turns": [...]
+            value = next((str(v) for v in value if str(v).strip()), "")
+        text = str(value).strip()
         if not text:
             continue
         category = str(row.get(category_column, "") or default_category).strip().lower() or default_category
@@ -182,8 +214,8 @@ def merge_into(existing_path: Path, new_records: list[dict[str, Any]]) -> dict[s
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--source", required=True, choices=["advbench", "jailbreakbench", "harmbench", "inthewild", "strongreject", "custom"])
-    parser.add_argument("--input", required=True, type=Path, help="Local CSV or JSON file you already obtained")
+    parser.add_argument("--source", required=True, choices=["advbench", "jailbreakbench", "harmbench", "inthewild", "strongreject", "sorrybench", "xstest", "custom"])
+    parser.add_argument("--input", required=True, type=Path, help="Local CSV, JSON or JSONL file you already obtained")
     parser.add_argument("--output", required=True, type=Path, help="Where to write the converted prompts JSON")
     parser.add_argument("--merge-into", type=Path, default=None, help="Existing prompts.json-shaped file to append into instead of overwriting --output")
     parser.add_argument("--text-column", default=None, help="Column holding the prompt text (required for --source custom)")
@@ -192,6 +224,8 @@ def main() -> int:
     parser.add_argument("--id-prefix", default=None, help="Prefix for generated ids (default: the source key)")
     parser.add_argument("--default-category", default="imported", help="Category to use when no category column is mapped")
     parser.add_argument("--default-severity", default="high", help="Severity label to assign to every imported entry")
+    parser.add_argument("--filter", action="append", default=[], metavar="COLUMN=VALUE",
+                        help="Keep only rows where COLUMN equals VALUE (repeatable), e.g. FunctionalCategory=standard")
     parser.add_argument("--dry-run", action="store_true", help="Print counts without writing any file")
     args = parser.parse_args()
 
@@ -207,6 +241,13 @@ def main() -> int:
     id_column = args.id_column or columns.get("id", "")
     id_prefix = args.id_prefix or args.source
 
+    row_filter: dict[str, str] = {}
+    for item in args.filter:
+        key, sep, value = item.partition("=")
+        if not sep or not key:
+            parser.error(f"--filter must look like COLUMN=VALUE, got: {item}")
+        row_filter[key] = value
+
     rows = load_rows(args.input)
     records = convert(
         rows,
@@ -217,6 +258,7 @@ def main() -> int:
         id_prefix=id_prefix,
         default_category=args.default_category,
         default_severity=args.default_severity,
+        row_filter=row_filter or None,
     )
 
     by_category: dict[str, int] = {}

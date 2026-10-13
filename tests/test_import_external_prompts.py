@@ -177,3 +177,47 @@ class TestMergeAndDryRun:
         )
         assert result.returncode != 0
         assert "not found" in result.stderr
+
+
+class TestFilterAndJsonl:
+    def test_filter_keeps_only_matching_rows(self, tmp_path):
+        src = tmp_path / "harmbench.csv"
+        write_csv(
+            src,
+            ["Behavior", "FunctionalCategory", "SemanticCategory", "BehaviorID"],
+            [
+                {"Behavior": "alpha", "FunctionalCategory": "standard", "SemanticCategory": "x", "BehaviorID": "a"},
+                {"Behavior": "beta", "FunctionalCategory": "copyright", "SemanticCategory": "y", "BehaviorID": "b"},
+            ],
+        )
+        out = tmp_path / "out.json"
+        result = run_script(
+            "--source", "harmbench", "--input", str(src), "--output", str(out),
+            "--filter", "FunctionalCategory=standard",
+        )
+        assert result.returncode == 0, result.stderr
+        prompts = json.loads(out.read_text(encoding="utf-8"))["prompts"]
+        assert [p["text"] for p in prompts] == ["alpha"]
+
+    def test_jsonl_with_list_valued_text(self, tmp_path):
+        src = tmp_path / "questions.jsonl"
+        src.write_text(
+            json.dumps({"question_id": 7, "category": "3", "turns": ["first prompt"]}) + "\n"
+            + json.dumps({"question_id": 8, "category": "4", "turns": []}) + "\n",
+            encoding="utf-8",
+        )
+        out = tmp_path / "out.json"
+        result = run_script("--source", "sorrybench", "--input", str(src), "--output", str(out))
+        assert result.returncode == 0, result.stderr
+        prompts = json.loads(out.read_text(encoding="utf-8"))["prompts"]
+        assert len(prompts) == 1  # the empty-turns row is skipped
+        assert prompts[0]["text"] == "first prompt"
+        assert prompts[0]["id"] == "sorrybench_7"
+
+    def test_bad_filter_is_rejected(self, tmp_path):
+        src = tmp_path / "x.csv"
+        write_csv(src, ["goal"], [{"goal": "g"}])
+        result = run_script("--source", "advbench", "--input", str(src),
+                            "--output", str(tmp_path / "o.json"), "--filter", "oops")
+        assert result.returncode != 0
+
