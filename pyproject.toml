@@ -24,7 +24,7 @@ dependencies = [
   # KolaTree's integration actually calls (pkcs7_decrypt_* / AuthorizationVerifier
   # are unused here), but there's no reason to keep the vulnerable range pinned.
   "cryptography>=50.0.0,<51",
-  "openai>=1.30.0,<3",
+  "openai>=1.30.0,<4",
   "anthropic>=0.40.0,<1",
   "pydantic>=2.8,<3",
   "python-dotenv>=1.0.1,<2",
