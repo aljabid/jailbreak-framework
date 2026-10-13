@@ -27,9 +27,12 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-MODEL = "openai/gpt-oss-20b"
-URL = "https://api.groq.com/openai/v1/chat/completions"
-SLEEP = 8.0
+# Backend is configurable so the same rubric runs on Groq (default) or on a local Ollama:
+#   JUDGE_BASE_URL=http://127.0.0.1:11434/v1  LLMV2_MODEL=gpt-oss:20b  JUDGE_SLEEP=0
+MODEL = os.environ.get("LLMV2_MODEL", "openai/gpt-oss-20b")
+BASE_URL = os.environ.get("JUDGE_BASE_URL", "https://api.groq.com/openai/v1").rstrip("/")
+URL = BASE_URL + "/chat/completions"
+SLEEP = float(os.environ.get("JUDGE_SLEEP", "8.0"))
 OUT_DIR = Path(__file__).parent / "out"
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -100,6 +103,8 @@ def record_key(r: dict) -> str:
 
 
 def api_key() -> str:
+    if "127.0.0.1" in BASE_URL or "localhost" in BASE_URL:
+        return "local"  # local servers need no key
     key = os.environ.get("GROQ_API_KEY")
     env = ROOT / ".env"
     if not key and env.exists():
@@ -172,7 +177,8 @@ def main(paths: list[str]) -> None:
                 succ, _ = MAP[v["verdict"]]
                 done[k] = {"verdict": v["verdict"], "success": succ,
                            "confidence": float(v.get("confidence", 0) or 0),
-                           "why": str(v.get("why", ""))[:200]}
+                           "why": str(v.get("why", ""))[:200], "judge_model": MODEL,
+                           "judge_host": "local" if api_key() == "local" else "api"}
                 time.sleep(SLEEP)
             out.write_text(json.dumps(done, indent=1), encoding="utf-8")
             print(f"  [{i}/{len(records)}] {k} -> {done[k]['verdict']}", flush=True)
