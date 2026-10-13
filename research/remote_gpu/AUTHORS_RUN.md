@@ -25,10 +25,36 @@ The **signing key**, a 64-character string the researcher sends you privately (n
 chat that is shared or stored publicly). Everything else, including the signed grant, comes
 with the repository or is downloaded by the scripts.
 
-## One-time setup
+## Models (downloaded automatically by `run`)
 
-1. Install: Git, Python 3.10+, [uv](https://docs.astral.sh/uv/), [Ollama](https://ollama.com),
-   and an NVIDIA driver that supports the RTX 5090 (570 or newer). Check with `nvidia-smi`.
+Target models (open-weight, pulled through Ollama; these exact tags are what the signed grant allows):
+
+| Model tag | Family | Disk |
+|---|---|---|
+| `llama3.1:8b` | Llama | 5 GB |
+| `qwen2.5:7b` | Qwen | 5 GB |
+| `mistral:7b` | Mistral | 4 GB |
+| `phi4` | Microsoft | 9 GB |
+| `qwen2.5:14b` | Qwen | 9 GB |
+| `gemma3:27b` | Google | 17 GB |
+| `mistral-small:24b` | Mistral | 14 GB |
+| `qwen2.5:32b` | Qwen | 20 GB |
+
+Judge models (also pulled automatically): `llama-guard3:8b` (5 GB), `gpt-oss:20b` (13 GB),
+`gemma2:27b` (16 GB). Everything together is about 130 GB. Only models up to about 32B are used,
+because the machine has one 32 GB GPU. If a tag cannot be pulled, report it; do not substitute.
+
+## One-time setup (Ubuntu)
+
+1. Prerequisites, and make sure the GPU driver works (`nvidia-smi` must show the RTX 5090;
+   a 570 or newer driver is needed):
+
+   ```
+   sudo apt update && sudo apt install -y git curl tmux
+   curl -LsSf https://astral.sh/uv/install.sh | sh        # then open a new shell
+   curl -fsSL https://ollama.com/install.sh | sh          # installs the Ollama service
+   ```
+
 2. Get the code:
 
    ```
@@ -44,9 +70,27 @@ with the repository or is downloaded by the scripts.
    JBF_AUTHORIZATION_SIGNING_KEY=PASTE_THE_KEY_HERE
    ```
 
-4. Start Ollama with parallel requests and, if the default drive is small, a model folder on a
-   big disk. Set `OLLAMA_NUM_PARALLEL=4` and `OLLAMA_MODELS=<folder with 150 GB free>`
-   **before** starting Ollama. Do not expose Ollama to the network.
+4. Configure the Ollama service (on Ubuntu it runs under systemd, so settings go in the service,
+   not in your shell). Pick a folder on a disk with 150 GB free for the models:
+
+   ```
+   sudo mkdir -p /data/ollama-models && sudo chown -R ollama:ollama /data/ollama-models
+   sudo systemctl edit ollama
+   ```
+
+   In the editor that opens, add these lines, save, and exit:
+
+   ```
+   [Service]
+   Environment="OLLAMA_NUM_PARALLEL=4"
+   Environment="OLLAMA_MODELS=/data/ollama-models"
+   ```
+
+   then `sudo systemctl restart ollama`. Do not expose Ollama to the network (the default,
+   127.0.0.1, is correct).
+
+5. Keep the machine awake for the three days:
+   `sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target`
 
 ## Command 1: prepare (about 15 minutes plus downloads)
 
@@ -73,8 +117,9 @@ budget allows). After each stage it scores the answers with Llama Guard and, on 
 two local LLM judges, and rewrites the zip files below. Check progress any time with
 `uv run python research/remote_gpu/study.py status`.
 
-It is resumable: after any stop (crash, reboot, power cut) run the same command again. On Linux
-use `tmux` or `screen`; keep the machine awake; avoid other heavy GPU jobs.
+It is resumable: after any stop (crash, reboot, power cut) run the same command again. Run it inside
+`tmux` so closing the terminal does not stop it (`tmux new -s study`, start the command, detach with
+`Ctrl+b` then `d`, come back with `tmux attach -t study`). Avoid other heavy GPU jobs.
 
 Optional validation: if the researcher sent files, put them in a folder `validate_in/` before
 `run`; they are processed automatically at the end.

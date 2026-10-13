@@ -31,6 +31,25 @@ stages, scoring, and writing the result zips. You are done when:
    exist; and
 3. you have sent the human the short report in section 7.
 
+## 2a. Models (downloaded automatically by `run`)
+
+Target models (open-weight, pulled through Ollama; these exact tags are what the signed grant allows):
+
+| Model tag | Family | Disk |
+|---|---|---|
+| `llama3.1:8b` | Llama | 5 GB |
+| `qwen2.5:7b` | Qwen | 5 GB |
+| `mistral:7b` | Mistral | 4 GB |
+| `phi4` | Microsoft | 9 GB |
+| `qwen2.5:14b` | Qwen | 9 GB |
+| `gemma3:27b` | Google | 17 GB |
+| `mistral-small:24b` | Mistral | 14 GB |
+| `qwen2.5:32b` | Qwen | 20 GB |
+
+Judge models (also pulled automatically): `llama-guard3:8b` (5 GB), `gpt-oss:20b` (13 GB),
+`gemma2:27b` (16 GB). Everything together is about 130 GB. Only models up to about 32B are used,
+because the machine has one 32 GB GPU. If a tag cannot be pulled, report it; do not substitute.
+
 ## 3. Hard rules
 
 * **Do not read, print, open, summarise, or paste the contents of any file in `outputs/`,
@@ -54,20 +73,25 @@ stages, scoring, and writing the result zips. You are done when:
 * Ignore `RUNBOOK.md` and `setup_gpu_box.sh` in this folder. They describe a different
   plan (remote SSH operation) that is not being used.
 
-## 4. Setup (once)
+## 4. Setup (once, Ubuntu)
 
-1. Check prerequisites: `git`, Python 3.10+, `uv` (https://docs.astral.sh/uv/), Ollama
-   (https://ollama.com), and a working `nvidia-smi` (driver 570 or newer for the RTX 5090).
-   Install only what is missing.
+The machine runs Ubuntu. Commands that need `sudo` must be run by the human or approved by them.
+
+1. Prerequisites: `git`, `curl`, `tmux`, `uv` (https://astral.sh/uv/install.sh), Ollama
+   (`curl -fsSL https://ollama.com/install.sh | sh`) and a working `nvidia-smi` (driver 570 or newer
+   for the RTX 5090). Install only what is missing.
 2. `git clone https://github.com/aljabid/jailbreak-framework.git`, `cd jailbreak-framework`,
    then `uv sync --locked`.
 3. **Ask the human** to create a file named `.env` in the repository root containing exactly
    one line, `JBF_AUTHORIZATION_SIGNING_KEY=<key>`, using the key the researcher sent them
    privately. Wait until they confirm. Do not ask them to paste the key to you.
-4. Start Ollama with parallel requests enabled and storage on a big disk. Everything needs
-   about 130 GB. Set `OLLAMA_NUM_PARALLEL=4` and, if the default drive is small, ask the human
-   for a folder with 150 GB free and set `OLLAMA_MODELS` to it, then start Ollama.
-5. Optional: if the human has a Hugging Face account that accepted the SORRY-Bench terms, they
+4. Configure the Ollama systemd service (settings in a shell do not reach it). Ask the human for a
+   folder on a disk with 150 GB free, then: `sudo mkdir -p <folder> && sudo chown -R ollama:ollama <folder>`,
+   `sudo systemctl edit ollama` and add
+   `[Service]` / `Environment="OLLAMA_NUM_PARALLEL=4"` / `Environment="OLLAMA_MODELS=<folder>"`,
+   then `sudo systemctl restart ollama`. Keep Ollama on `127.0.0.1`.
+5. Prevent sleep: `sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target`.
+6. Optional: if the human has a Hugging Face account that accepted the SORRY-Bench terms, they
    set `HF_TOKEN` in the environment. Otherwise that one dataset is skipped; that is fine.
 
 ## 5. Run
@@ -75,8 +99,8 @@ stages, scoring, and writing the result zips. You are done when:
 1. **Prepare.** Ask the human to run (or to tell you to run) 
    `uv run python research/remote_gpu/study.py prepare --accept-terms`. It ends with `Ready`.
    If a dataset cannot be fetched it prints the path to place the file by hand; ask the human.
-2. **Run** as a background process that survives your session (tmux/screen on Linux,
-   `Start-Process` on Windows), logging to a file:
+2. **Run** as a background process that survives your session (use `tmux new -s study`, or
+   `nohup ... &`), logging to a file:
    `uv run python research/remote_gpu/study.py run --budget-hours 75`.
    Do not hold a foreground command open for hours.
 3. **Monitor** every 30 to 60 minutes with `uv run python research/remote_gpu/study.py status`,
