@@ -302,6 +302,8 @@ def run(
             level = r.get("risk_level", "?")
             click.echo(f"  {icon} [{level:8s}] score={r.get('risk_score', 0):.3f} | {strat_name}")
 
+    record_logger.flush()
+
     stats = scorer.aggregate_stats(all_results)
 
     if should_report and all_results:

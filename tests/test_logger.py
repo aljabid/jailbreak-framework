@@ -164,3 +164,34 @@ class TestAttackRecordLoggerPersistence:
         leftover_temp_files = list(tmp_path.glob(f".{results_file.name}.*.tmp"))
         assert leftover_temp_files == []
         assert not results_file.exists()
+
+
+class TestBatchedFlush:
+    def test_default_writes_every_record(self, tmp_path):
+        from utils.logger import AttackRecordLogger
+
+        path = tmp_path / "r.json"
+        rec = AttackRecordLogger(str(path))
+        rec.save({"a": 1})
+        assert len(json.loads(path.read_text(encoding="utf-8"))) == 1
+
+    def test_flush_every_batches_and_flush_writes_the_rest(self, tmp_path):
+        from utils.logger import AttackRecordLogger
+
+        path = tmp_path / "r.json"
+        rec = AttackRecordLogger(str(path), flush_every=3)
+        rec.save({"a": 1})
+        rec.save({"a": 2})
+        assert not path.exists()  # nothing written yet
+        rec.save({"a": 3})
+        assert len(json.loads(path.read_text(encoding="utf-8"))) == 3
+        rec.save({"a": 4})
+        rec.flush()
+        assert len(json.loads(path.read_text(encoding="utf-8"))) == 4
+        assert rec.record_count == 4
+
+    def test_env_sets_flush_every(self, tmp_path, monkeypatch):
+        from utils.logger import AttackRecordLogger
+
+        monkeypatch.setenv("JBF_FLUSH_EVERY", "5")
+        assert AttackRecordLogger(str(tmp_path / "r.json")).flush_every == 5

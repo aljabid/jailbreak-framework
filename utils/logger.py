@@ -4,6 +4,7 @@ import logging.handlers
 import os
 import sys
 import tempfile
+import time
 import uuid
 from contextlib import contextmanager
 from datetime import datetime, timezone
@@ -145,7 +146,15 @@ class AttackRecordLogger:
         results_file: str = "outputs/results.json",
         run_metadata: dict | None = None,
         redact_persisted_secrets: bool = True,
+        flush_every: int | None = None,
     ):
+        # Rewriting the whole file per record is O(n^2) for large runs. flush_every batches
+        # the writes (default 1 = every record, the original behaviour); JBF_FLUSH_EVERY sets
+        # it from the environment, and flush() writes whatever is pending.
+        if flush_every is None:
+            flush_every = int(os.environ.get("JBF_FLUSH_EVERY", "1") or 1)
+        self.flush_every = max(1, flush_every)
+        self._pending = 0
         self.results_file = Path(results_file)
         self.results_file.parent.mkdir(parents=True, exist_ok=True)
         self._records: list[dict] = []
@@ -174,7 +183,9 @@ class AttackRecordLogger:
             redact_value(record, include_pii=False) if self.redact_persisted_secrets else record
         )
         self._records.append(stored)
-        self._flush()
+        self._pending += 1
+        if self._pending >= self.flush_every:
+            self._flush()
 
     def save_batch(self, records: list) -> None:
 
@@ -186,7 +197,13 @@ class AttackRecordLogger:
                 r["run_metadata"] = self.run_metadata
             stored = redact_value(r, include_pii=False) if self.redact_persisted_secrets else r
             self._records.append(stored)
-        self._flush()
+            self._pending += 1
+        if self._pending >= self.flush_every:
+            self._flush()
+
+    def flush(self) -> None:
+        if self._pending:
+            self._flush()
 
     def _flush(self) -> None:
 
@@ -204,7 +221,15 @@ class AttackRecordLogger:
                 json.dump(self._records, handle, indent=2, ensure_ascii=False)
                 handle.flush()
                 os.fsync(handle.fileno())
-            os.replace(temp_path, self.results_file)
+            for attempt in range(6):  # Windows scanners/indexers can briefly lock the file
+                try:
+                    os.replace(temp_path, self.results_file)
+                    break
+                except PermissionError:
+                    if attempt == 5:
+                        raise
+                    time.sleep(0.2 * (attempt + 1))
+            self._pending = 0
         finally:
             if temp_path is not None and temp_path.exists():
                 temp_path.unlink()
