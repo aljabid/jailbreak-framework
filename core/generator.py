@@ -4,6 +4,7 @@ import random
 from collections.abc import Iterator
 from importlib import resources
 from pathlib import Path
+from typing import Any
 
 from strategies.base_strategy import BaseStrategy
 from strategies.encoding_attack import EncodingAttackStrategy
@@ -198,7 +199,7 @@ class PromptGenerator:
         if count is not None:
             prompts = prompts[:count]
 
-        strategy = self._strategy_instances.get(strategy_name)
+        strategy: Any = self._strategy_instances.get(strategy_name)
         # template strategies expose a fixed index; cycling it makes each
         # variation pick a DISTINCT template instead of a random (often
         # repeated) one. Strategies without it just vary via their own rng.
