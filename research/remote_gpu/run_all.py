@@ -16,7 +16,7 @@ When all models are done it also scores every output with Llama Guard 3 8B
   python research/remote_gpu/run_all.py --status      # progress only
 
 Prerequisites: .env contains JBF_AUTHORIZATION_SIGNING_KEY; the base-prompt file
-and the signed grant are in place (see FRIEND_RUN.md). Nothing here uploads data.
+and the signed grant are in place (see AUTHORS_RUN.md). Nothing here uploads data.
 """
 from __future__ import annotations
 
@@ -206,7 +206,7 @@ def main() -> None:
 
     failed = [m for m in models if not attack(m, args)]
     if args.smoke:
-        print("\nSmoke test", "FAILED" if failed else "passed", "- see FRIEND_RUN.md if it failed.")
+        print("\nSmoke test", "FAILED" if failed else "passed", "- see AUTHORS_RUN.md if it failed.")
         sys.exit(1 if failed else 0)
     if not args.no_guard:
         guard_all(models)

@@ -1,7 +1,7 @@
 # Remote GPU box: one-time setup and remote operation
 
 Goal: a lab machine with an RTX 5090 (32 GB) serves open-weight models to the
-researcher's laptop. The friend sets it up **once** (about 45 minutes), then the
+researcher's laptop. The lab author sets it up **once** (about 45 minutes), then the
 researcher operates it entirely from home. The design avoids needing anyone to
 touch the machine again.
 
@@ -19,19 +19,19 @@ http://127.0.0.1:21434  ==tunnel==>       Ollama on 127.0.0.1:11434 (loopback on
   an SSH key held by the researcher.
 * The framework already allows loopback endpoints, so no code changes are needed:
   it just talks to `127.0.0.1:21434`, which the SSH tunnel forwards to the box.
-* Models are pulled later, from home, over SSH. The friend does not download ~100 GB.
+* Models are pulled later, from home, over SSH. The lab author does not download ~100 GB.
 
 ## 0. Researcher prepares (before the session)
 
 1. Create a Tailscale account; install Tailscale on the laptop and sign in.
 2. In the Tailscale admin console create an **auth key** (Settings > Keys): one-use,
-   expiry 7 days. Give it to the friend over a private channel, not a public chat.
+   expiry 7 days. Give it to the lab author over a private channel, not a public chat.
 3. Generate a dedicated SSH key on the laptop (PowerShell):
    `ssh-keygen -t ed25519 -f $env:USERPROFILE\.ssh\id_ed25519_gpulab -C "jbf-gpulab"`
-   Send the friend ONLY the `.pub` file contents. The private key never leaves the laptop.
-4. Ask the friend these questions first (answers decide whether the script applies):
+   Send the lab author ONLY the `.pub` file contents. The private key never leaves the laptop.
+4. Ask the lab author these questions first (answers decide whether the script applies):
    * Linux (which distro) or Windows? The script targets Linux with systemd.
-   * Does the friend have sudo? Output of `nvidia-smi` (driver must support the RTX 5090;
+   * Does the lab author have sudo? Output of `nvidia-smi` (driver must support the RTX 5090;
      a recent 570+ driver is needed).
    * Free disk where models will live (need 150 GB or more)? Is the GPU shared with other lab users?
    * Can the box reach the internet (Tailscale, Ollama downloads)? Is it on 24/7?
@@ -39,7 +39,7 @@ http://127.0.0.1:21434  ==tunnel==>       Ollama on 127.0.0.1:11434 (loopback on
 5. Get the supervisor's one-line email confirming the lab machine may be used for this
    study and accessed remotely. Keep it with the paper's ethics statement.
 
-## 1. Friend runs the setup (about 15 minutes of work)
+## 1. The lab author runs the setup (about 15 minutes of work)
 
 ```bash
 git clone https://github.com/aljabid/jailbreak-framework.git
@@ -50,7 +50,7 @@ sudo TS_AUTHKEY='tskey-auth-...' SSH_PUBKEY='ssh-ed25519 AAAA... jbf-gpulab' bas
 If the models should live on another disk: add `MODELS_DIR=/data/ollama`.
 The script is idempotent; re-running it is safe.
 
-## 2. Before you leave (friend and researcher together on a call)
+## 2. Before you leave (lab author and researcher together on a call)
 
 Do not skip these. They are what prevent being locked out later.
 
@@ -64,8 +64,8 @@ Do not skip these. They are what prevent being locked out later.
       leave the box off.
 * [ ] `nvidia-smi` shows the GPU and nothing else big is using it. Ask other lab users not to
       launch large jobs on it during runs.
-* [ ] Friend leaves the researcher a phone number and names someone who can power-cycle the box.
-* [ ] Friend does not update the NVIDIA driver or kernel after this without telling the researcher
+* [ ] The lab author leaves the researcher a phone number and names someone who can power-cycle the box.
+* [ ] The lab author does not update the NVIDIA driver or kernel after this without telling the researcher
       (a driver update plus reboot is the most common way a working box breaks).
 
 ## 3. Researcher operates from home
