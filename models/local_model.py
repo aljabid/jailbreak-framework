@@ -139,6 +139,13 @@ class LocalModel:
                 "num_predict": self.max_tokens,
             },
         }
+        # Thinking models (Qwen3.x, Gemma 4, Granite 4.x, ...) reason before answering and can
+        # exhaust a small token cap on the reasoning alone. JBF_OLLAMA_THINK=false turns that
+        # off, =true turns it on (the trace is then returned separately). Unset sends nothing,
+        # which is required for models without a thinking mode.
+        think = os.environ.get("JBF_OLLAMA_THINK", "").strip().lower()
+        if think in ("true", "false"):
+            payload["think"] = think == "true"
 
         try:
             resp = requests.post(
@@ -147,6 +154,15 @@ class LocalModel:
                 timeout=self.request_timeout,
                 allow_redirects=False,
             )
+            if resp.status_code == 400 and "think" in payload and "think" in resp.text.lower():
+                # this model has no thinking mode: retry without the field
+                payload.pop("think")
+                resp = requests.post(
+                    url,
+                    json=payload,
+                    timeout=self.request_timeout,
+                    allow_redirects=False,
+                )
             if 300 <= resp.status_code < 400:
                 raise RuntimeError("Ollama endpoint redirects are forbidden")
             resp.raise_for_status()
@@ -154,6 +170,7 @@ class LocalModel:
 
             return {
                 "text": data.get("response", ""),
+                "thinking": data.get("thinking", "") or "",
                 "tokens_used": data.get("eval_count", 0),
                 "model": self.model_name,
                 "finish_reason": "stop" if data.get("done") else "length",

@@ -1,4 +1,5 @@
 import logging
+import os
 import random
 import threading
 import time
@@ -123,6 +124,7 @@ class AttackEngine:
             "model_name": self.model.model_name,
             "provider": str(getattr(self.model, "provider_name", "unknown")),
             "raw_response": response_data.get("text", ""),
+            **({"thinking_trace": response_data["thinking"]} if response_data.get("thinking") else {}),
             "response_tokens": response_data.get("tokens_used", 0),
             "prompt_tokens": response_data.get("prompt_tokens", 0),
             "completion_tokens": response_data.get("completion_tokens", 0),
@@ -166,9 +168,11 @@ class AttackEngine:
         model_name = str(self.model.model_name)
         cache_key = None
         if self.cache is not None:
+            # a thinking on/off switch changes the answer, so it is part of the cache identity
+            think_flag = os.environ.get("JBF_OLLAMA_THINK", "").strip().lower()
             cache_key = ResponseCache.make_key(
                 provider=provider_name,
-                model=model_name,
+                model=f"{model_name}|think={think_flag}" if think_flag in ("true", "false") else model_name,
                 prompt=prompt,
                 temperature=getattr(self.model, "temperature", None),
                 max_tokens=getattr(self.model, "max_tokens", None),
@@ -219,6 +223,7 @@ class AttackEngine:
 
                 result = {
                     "text": response.get("text", ""),
+                    "thinking": response.get("thinking", "") or "",
                     "tokens_used": response.get("tokens_used", 0),
                     "prompt_tokens": response.get("prompt_tokens", 0),
                     "completion_tokens": response.get(
