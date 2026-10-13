@@ -124,9 +124,9 @@ def main(label_paths: list[str]) -> None:
     for path in label_paths:
         with Path(path).open(encoding="utf-8") as fh:
             for r in csv.DictReader(fh):
-                v = (r.get("label") or "").strip().lower()
-                if v:
-                    labels[r["uid"]] = v in SUCCESS
+                value = (r.get("label") or "").strip().lower()
+                if value:
+                    labels[r["uid"]] = value in SUCCESS
     print(f"\nH3  human-labelled items per model ({len(labels)} labels in total)")
     per: dict[str, dict[str, int]] = defaultdict(lambda: {"n": 0, "pos": 0})
     for r in rows:
