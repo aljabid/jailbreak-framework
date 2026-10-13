@@ -1,5 +1,9 @@
 # Remote GPU box: one-time setup and remote operation
 
+> **Alternative plan, not currently used.** The current plan is in `TASK.md` and
+> `AUTHORS_RUN.md` (the lab author runs `run_all.py` locally on the GPU machine).
+> This file describes remote SSH operation and is kept only for reference.
+
 Goal: a lab machine with an RTX 5090 (32 GB) serves open-weight models to the
 researcher's laptop. The lab author sets it up **once** (about 45 minutes), then the
 researcher operates it entirely from home. The design avoids needing anyone to
