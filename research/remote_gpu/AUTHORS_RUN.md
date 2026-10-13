@@ -1,7 +1,7 @@
 # Running the study on the lab GPU machine
 
 Thank you for helping. After setup the whole study is **two commands**. It runs for about
-**3 days** inside a total budget of **70 to 80 GPU-hours**, needs about **130 GB** of disk, and
+**3 days** inside a total budget of **70 to 80 GPU-hours**, needs about **160 GB** of disk (keep 200 GB free), and
 you only check on it now and then. `TASK.md` has the same plan in a form that can be handed
 to a script runner; `STUDY_PLAN.md` explains what the whole project is for.
 
@@ -29,19 +29,24 @@ with the repository or is downloaded by the scripts.
 
 Target models (open-weight, pulled through Ollama; these exact tags are what the signed grant allows):
 
-| Model tag | Family | Disk |
-|---|---|---|
-| `llama3.1:8b` | Llama | 5 GB |
-| `qwen2.5:7b` | Qwen | 5 GB |
-| `mistral:7b` | Mistral | 4 GB |
-| `phi4` | Microsoft | 9 GB |
-| `qwen2.5:14b` | Qwen | 9 GB |
-| `gemma3:27b` | Google | 17 GB |
-| `mistral-small:24b` | Mistral | 14 GB |
-| `qwen2.5:32b` | Qwen | 20 GB |
+| Model tag | Maker | Disk | Role |
+|---|---|---|---|
+| `qwen3.8:27b` | Alibaba | 18 GB | current generation (thinking-capable) |
+| `gemma4:31b` | Google | 20 GB | current generation, dense |
+| `gemma4:26b` | Google | 17 GB | current generation, mixture-of-experts |
+| `muse-glimmer:30b` | Meta | 18 GB | current generation (thinking-capable) |
+| `granite4.2:30b` | IBM | 18 GB | current generation (thinking-capable) |
+| `nemotron-3.5-lightning:30b` | NVIDIA | about 18 GB | current generation, mixture-of-experts |
+| `llama3.1:8b` | Meta | 5 GB | older anchor, for comparison with earlier work |
+| `mistral-small:24b` | Mistral | 14 GB | older anchor, for comparison with earlier work |
+
+The current-generation models reason before answering. In the main run the scripts switch thinking
+**off** (so a 320-token cap measures the answer, not the reasoning). A separate **reasoning arm**
+re-runs three of them (`qwen3.8:27b`, `gemma4:26b`, `granite4.2:30b`) on the first 100 prompts with
+thinking **on** and a 3072-token budget, and stores the reasoning trace.
 
 Judge models (also pulled automatically): `llama-guard3:8b` (5 GB), `gpt-oss:20b` (13 GB),
-`gemma2:27b` (16 GB). Everything together is about 130 GB. Only models up to about 32B are used,
+`phi4` (9 GB). Everything together is about 160 GB; keep 200 GB free. Only models up to about 32B are used,
 because the machine has one 32 GB GPU. If a tag cannot be pulled, report it; do not substitute.
 
 ## Datasets (downloaded by `prepare`)
@@ -88,7 +93,7 @@ with SORRY-Bench). All files stay on this machine in `research/data_journal/` an
    ```
 
 4. Configure the Ollama service (on Ubuntu it runs under systemd, so settings go in the service,
-   not in your shell). Pick a folder on a disk with 150 GB free for the models:
+   not in your shell). Pick a folder on a disk with 200 GB free for the models:
 
    ```
    sudo mkdir -p /data/ollama-models && sudo chown -R ollama:ollama /data/ollama-models
@@ -130,7 +135,7 @@ uv run python research/remote_gpu/study.py run --budget-hours 75
 
 It downloads the models (the first time), measures the real speed of each, chooses how many
 prompts fit the budget, and works in stages (first 300 prompts, then 700, then as many as the
-budget allows). After each stage it scores the answers with Llama Guard and, on a sample, with
+budget allows), then the reasoning arm. After each stage it scores the answers with Llama Guard and, on a sample, with
 two local LLM judges, and rewrites the zip files below. Check progress any time with
 `uv run python research/remote_gpu/study.py status`.
 

@@ -35,19 +35,24 @@ stages, scoring, and writing the result zips. You are done when:
 
 Target models (open-weight, pulled through Ollama; these exact tags are what the signed grant allows):
 
-| Model tag | Family | Disk |
-|---|---|---|
-| `llama3.1:8b` | Llama | 5 GB |
-| `qwen2.5:7b` | Qwen | 5 GB |
-| `mistral:7b` | Mistral | 4 GB |
-| `phi4` | Microsoft | 9 GB |
-| `qwen2.5:14b` | Qwen | 9 GB |
-| `gemma3:27b` | Google | 17 GB |
-| `mistral-small:24b` | Mistral | 14 GB |
-| `qwen2.5:32b` | Qwen | 20 GB |
+| Model tag | Maker | Disk | Role |
+|---|---|---|---|
+| `qwen3.8:27b` | Alibaba | 18 GB | current generation (thinking-capable) |
+| `gemma4:31b` | Google | 20 GB | current generation, dense |
+| `gemma4:26b` | Google | 17 GB | current generation, mixture-of-experts |
+| `muse-glimmer:30b` | Meta | 18 GB | current generation (thinking-capable) |
+| `granite4.2:30b` | IBM | 18 GB | current generation (thinking-capable) |
+| `nemotron-3.5-lightning:30b` | NVIDIA | about 18 GB | current generation, mixture-of-experts |
+| `llama3.1:8b` | Meta | 5 GB | older anchor, for comparison with earlier work |
+| `mistral-small:24b` | Mistral | 14 GB | older anchor, for comparison with earlier work |
+
+The current-generation models reason before answering. In the main run the scripts switch thinking
+**off** (so a 320-token cap measures the answer, not the reasoning). A separate **reasoning arm**
+re-runs three of them (`qwen3.8:27b`, `gemma4:26b`, `granite4.2:30b`) on the first 100 prompts with
+thinking **on** and a 3072-token budget, and stores the reasoning trace.
 
 Judge models (also pulled automatically): `llama-guard3:8b` (5 GB), `gpt-oss:20b` (13 GB),
-`gemma2:27b` (16 GB). Everything together is about 130 GB. Only models up to about 32B are used,
+`phi4` (9 GB). Everything together is about 160 GB. Only models up to about 32B are used,
 because the machine has one 32 GB GPU. If a tag cannot be pulled, report it; do not substitute.
 
 ## 3. Hard rules
@@ -86,7 +91,7 @@ The machine runs Ubuntu. Commands that need `sudo` must be run by the human or a
    one line, `JBF_AUTHORIZATION_SIGNING_KEY=<key>`, using the key the researcher sent them
    privately. Wait until they confirm. Do not ask them to paste the key to you.
 4. Configure the Ollama systemd service (settings in a shell do not reach it). Ask the human for a
-   folder on a disk with 150 GB free, then: `sudo mkdir -p <folder> && sudo chown -R ollama:ollama <folder>`,
+   folder on a disk with 200 GB free, then: `sudo mkdir -p <folder> && sudo chown -R ollama:ollama <folder>`,
    `sudo systemctl edit ollama` and add
    `[Service]` / `Environment="OLLAMA_NUM_PARALLEL=4"` / `Environment="OLLAMA_MODELS=<folder>"`,
    then `sudo systemctl restart ollama`. Keep Ollama on `127.0.0.1`.
@@ -130,7 +135,7 @@ could not be used, and any warnings. At the end tell the human to send these fil
 researcher **privately** (not through GitHub):
 
 * `outputs/results_for_researcher.zip` (answers, Llama Guard verdicts, data-version records);
-* `outputs/judges_for_researcher.zip` (LLM judge verdicts only).
+* `outputs/judges_for_researcher.zip` and `outputs/judges_think_for_researcher.zip` (LLM judge verdicts only).
 
 The human should delete the model folder, `outputs/` and `validate_in/` after the researcher
 confirms receipt.
