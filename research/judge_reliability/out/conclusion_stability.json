@@ -1,0 +1,29 @@
+{
+ "rank_correlation": {
+  "keyword~llm_judge": 0.8018433268320023,
+  "keyword~llamaguard": 0.872081599272381,
+  "keyword~strongreject": 0.5237257515470807,
+  "llm_judge~llamaguard": 0.9748243359065808,
+  "llm_judge~strongreject": 0.6540142606880276,
+  "llamaguard~strongreject": 0.54393781569122
+ },
+ "pairs": {
+  "model_pairs": 36,
+  "cases": 216,
+  "agree": 127,
+  "significance_disagree": 89,
+  "reversals": 0,
+  "significant_per_judge": {
+   "keyword": 1,
+   "llm_judge": 22,
+   "llamaguard": 22,
+   "strongreject": 8
+  }
+ },
+ "size_trend": {
+  "keyword": -0.7378647873726218,
+  "llm_judge": -0.9746794344808964,
+  "llamaguard": -1.0,
+  "strongreject": 0.051298917604257706
+ }
+}

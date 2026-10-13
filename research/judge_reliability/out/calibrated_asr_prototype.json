@@ -1,0 +1,258 @@
+{
+ "population": 950,
+ "labelled": 132,
+ "strata": {
+  "all_no": [
+   782,
+   23,
+   0
+  ],
+  "disagree": [
+   164,
+   105,
+   51
+  ],
+  "all_yes": [
+   4,
+   4,
+   3
+  ]
+ },
+ "estimates": {
+  "keyword": {
+   "cell_bayes": {
+    "N": 950,
+    "raw": 0.014736842105263158,
+    "mean": 0.10415747368421052,
+    "ci": [
+     0.08,
+     0.1705263157894737
+    ],
+    "unlabelled_cells": 0
+   },
+   "ppi_normal": [
+    0.08931328320802004,
+    0.07870307458579558,
+    0.0999234918302445
+   ],
+   "human_only_normal": [
+    0.08700751879699248,
+    0.07706133695143375,
+    0.09695370064255121
+   ]
+  },
+  "llm_judge": {
+   "cell_bayes": {
+    "N": 950,
+    "raw": 0.09263157894736843,
+    "mean": 0.10448557894736842,
+    "ci": [
+     0.08105263157894736,
+     0.1705263157894737
+    ],
+    "unlabelled_cells": 0
+   },
+   "ppi_normal": [
+    0.08993483709273184,
+    0.07812309276553991,
+    0.10174658141992377
+   ],
+   "human_only_normal": [
+    0.08700751879699248,
+    0.07706133695143375,
+    0.09695370064255121
+   ]
+  },
+  "llamaguard": {
+   "cell_bayes": {
+    "N": 950,
+    "raw": 0.12105263157894737,
+    "mean": 0.10353536842105264,
+    "ci": [
+     0.08,
+     0.1694736842105263
+    ],
+    "unlabelled_cells": 0
+   },
+   "ppi_normal": [
+    0.0838295739348371,
+    0.07046009094458058,
+    0.09719905692509362
+   ],
+   "human_only_normal": [
+    0.08700751879699248,
+    0.07706133695143375,
+    0.09695370064255121
+   ]
+  },
+  "strongreject": {
+   "cell_bayes": {
+    "N": 950,
+    "raw": 0.07789473684210527,
+    "mean": 0.10341610526315789,
+    "ci": [
+     0.08105263157894736,
+     0.1705263157894737
+    ],
+    "unlabelled_cells": 0
+   },
+   "ppi_normal": [
+    0.08670676691729323,
+    0.07447667312585764,
+    0.09893686070872883
+   ],
+   "human_only_normal": [
+    0.08700751879699248,
+    0.07706133695143375,
+    0.09695370064255121
+   ]
+  },
+  "ensemble2": {
+   "cell_bayes": {
+    "N": 950,
+    "raw": 0.08315789473684211,
+    "mean": 0.10428615789473683,
+    "ci": [
+     0.08105263157894736,
+     0.17157894736842105
+    ],
+    "unlabelled_cells": 0
+   },
+   "ppi_normal": [
+    0.08868170426065164,
+    0.07673389285871658,
+    0.1006295156625867
+   ],
+   "human_only_normal": [
+    0.08700751879699248,
+    0.07706133695143375,
+    0.09695370064255121
+   ]
+  }
+ },
+ "coverage": {
+  "keyword": [
+   {
+    "n_labelled": 30,
+    "coverage_ppi": 0.9465,
+    "coverage_human_only": 0.9345,
+    "mean_width_ppi": 0.32760302672209857,
+    "mean_width_human_only": 0.3103824813905073
+   },
+   {
+    "n_labelled": 60,
+    "coverage_ppi": 0.9465,
+    "coverage_human_only": 0.94,
+    "mean_width_ppi": 0.1947853188417768,
+    "mean_width_human_only": 0.18434030950437622
+   },
+   {
+    "n_labelled": 90,
+    "coverage_ppi": 0.9545,
+    "coverage_human_only": 0.966,
+    "mean_width_ppi": 0.12152400610248631,
+    "mean_width_human_only": 0.11506524101334335
+   }
+  ],
+  "llm_judge": [
+   {
+    "n_labelled": 30,
+    "coverage_ppi": 0.9545,
+    "coverage_human_only": 0.926,
+    "mean_width_ppi": 0.3361337157866932,
+    "mean_width_human_only": 0.3100367424412855
+   },
+   {
+    "n_labelled": 60,
+    "coverage_ppi": 0.9535,
+    "coverage_human_only": 0.9465,
+    "mean_width_ppi": 0.2006784323446909,
+    "mean_width_human_only": 0.184442975220711
+   },
+   {
+    "n_labelled": 90,
+    "coverage_ppi": 0.954,
+    "coverage_human_only": 0.9605,
+    "mean_width_ppi": 0.12546526913757555,
+    "mean_width_human_only": 0.11496342659102618
+   }
+  ],
+  "llamaguard": [
+   {
+    "n_labelled": 30,
+    "coverage_ppi": 0.9355,
+    "coverage_human_only": 0.93,
+    "mean_width_ppi": 0.38202248101055236,
+    "mean_width_human_only": 0.3104148954352485
+   },
+   {
+    "n_labelled": 60,
+    "coverage_ppi": 0.9425,
+    "coverage_human_only": 0.9375,
+    "mean_width_ppi": 0.2280125528434046,
+    "mean_width_human_only": 0.18427733040147667
+   },
+   {
+    "n_labelled": 90,
+    "coverage_ppi": 0.9485,
+    "coverage_human_only": 0.967,
+    "mean_width_ppi": 0.142502642159519,
+    "mean_width_human_only": 0.11503696502448106
+   }
+  ],
+  "strongreject": [
+   {
+    "n_labelled": 30,
+    "coverage_ppi": 0.9425,
+    "coverage_human_only": 0.938,
+    "mean_width_ppi": 0.3471645386871921,
+    "mean_width_human_only": 0.31031114966390394
+   },
+   {
+    "n_labelled": 60,
+    "coverage_ppi": 0.9465,
+    "coverage_human_only": 0.9505,
+    "mean_width_ppi": 0.20859863353984084,
+    "mean_width_human_only": 0.18447371603045265
+   },
+   {
+    "n_labelled": 90,
+    "coverage_ppi": 0.9505,
+    "coverage_human_only": 0.96,
+    "mean_width_ppi": 0.13009103067443517,
+    "mean_width_human_only": 0.11507606494084337
+   }
+  ],
+  "ensemble2": [
+   {
+    "n_labelled": 30,
+    "coverage_ppi": 0.9405,
+    "coverage_human_only": 0.9305,
+    "mean_width_ppi": 0.33939777233754864,
+    "mean_width_human_only": 0.30998411779355445
+   },
+   {
+    "n_labelled": 60,
+    "coverage_ppi": 0.946,
+    "coverage_human_only": 0.9585,
+    "mean_width_ppi": 0.20291965099040804,
+    "mean_width_human_only": 0.1845577167054074
+   },
+   {
+    "n_labelled": 90,
+    "coverage_ppi": 0.9445,
+    "coverage_human_only": 0.96,
+    "mean_width_ppi": 0.1268116850360103,
+    "mean_width_human_only": 0.11501996365635227
+   }
+  ]
+ },
+ "all_no_bound": {
+  "23": 0.1481851289152244,
+  "50": 0.07112173646419762,
+  "100": 0.03621669264517646,
+  "150": 0.024292597166108543,
+  "300": 0.012220974694293507,
+  "600": 0.006129271330669206
+ }
+}
