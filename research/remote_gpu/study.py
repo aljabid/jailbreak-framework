@@ -92,9 +92,9 @@ def save_state(state: dict) -> None:
     STATE.write_text(json.dumps(state, indent=1), encoding="utf-8")
 
 
-def make_args(args: argparse.Namespace, n: int = 0) -> argparse.Namespace:
+def make_args(args: argparse.Namespace, n: int = 0, arm: str = "main") -> argparse.Namespace:
     return argparse.Namespace(prompts=args.prompts, grant=args.grant, n=n, variations=1,
-                              concurrency=args.concurrency, smoke=False, hours=0)
+                              concurrency=args.concurrency, smoke=False, hours=0, arm=arm)
 
 
 # ---------------------------------------------------------------- prepare
@@ -142,8 +142,8 @@ def prepare(args: argparse.Namespace) -> int:
 
 
 # -------------------------------------------------------------------- run
-def judge(models: list[str], k: int, args: argparse.Namespace) -> None:
-    sh([sys.executable, "research/remote_gpu/judge_all.py", "--judge-n", str(k),
+def judge(models: list[str], k: int, args: argparse.Namespace, arm: str = "main") -> None:
+    sh([sys.executable, "research/remote_gpu/judge_all.py", "--judge-n", str(k), "--arm", arm,
         "--models", *models, "--corpus", args.prompts])
 
 
@@ -167,7 +167,8 @@ def run(args: argparse.Namespace) -> int:
             return 1
         sec = sum(r[1] for r in rows)
         try:
-            plan = plan_stages(sec, total, args.budget_hours, n_models=len(rows))
+            # ~52% of the budget for the main arm; ~8% is reserved for the reasoning arm
+            plan = plan_stages(sec, total, args.budget_hours, n_models=len(rows), gen_share=0.52)
         except ValueError as exc:
             print(exc)
             return 1
@@ -213,6 +214,29 @@ def run(args: argparse.Namespace) -> int:
         if failed:
             return 1
 
+    if not args.no_reasoning_arm and "reasoning" not in state.get("arms_done", []):
+        think_models = [m for m in run_all.REASONING_ARM_MODELS if m in usable]
+        if think_models and state["seconds_used"] <= 0.85 * budget_s:
+            print(f"\n=== reasoning arm: {think_models}, thinking ON, first "
+                  f"{run_all.REASONING_ARM_PROMPTS} prompts ===")
+            t0 = time.time()
+            think_args = make_args(args, n=run_all.REASONING_ARM_PROMPTS, arm="think")
+            tfailed = [m for m in think_models if not run_all.attack(m, think_args)]
+            tok = [m for m in think_models if m not in tfailed]
+            if tok:
+                run_all.guard_all(tok, "adv_think")
+                judge(tok, run_all.REASONING_ARM_PROMPTS, args, arm="think")
+            run_all.package(usable)
+            state["seconds_used"] += time.time() - t0
+            if tfailed:
+                state["failed_models"] = sorted(set(state["failed_models"]) | set(tfailed))
+                print(f"Reasoning arm incomplete for {tfailed}; run the same command again to resume.")
+            else:
+                state.setdefault("arms_done", []).append("reasoning")
+            save_state(state)
+        elif think_models:
+            print("\nSkipping the reasoning arm: not enough budget left.")
+
     validate = sorted((ROOT / "validate_in").glob("*.json")) if (ROOT / "validate_in").exists() else []
     if validate and not state.get("validated"):
         print("\n=== validating the local judges on the supplied older answers ===")
@@ -222,7 +246,8 @@ def run(args: argparse.Namespace) -> int:
 
     print("\n" + "=" * 60)
     print("Finished. Send these files to the researcher PRIVATELY (not via GitHub):")
-    for name in ("results_for_researcher.zip", "judges_for_researcher.zip"):
+    for name in ("results_for_researcher.zip", "judges_for_researcher.zip",
+                 "judges_think_for_researcher.zip"):
         if (run_all.OUT_DIR / name).exists():
             print("  outputs/" + name)
     if state["failed_models"]:
@@ -253,8 +278,10 @@ def main() -> int:
     ap.add_argument("--models", nargs="+", default=run_all.DEFAULT_MODELS)
     ap.add_argument("--concurrency", type=int, default=4)
     ap.add_argument("--prompts", default=str(CORPUS))
-    ap.add_argument("--grant", default=str(ROOT / "research" / "grants" / "journal_grant_v3_signed.json"))
+    ap.add_argument("--grant", default=str(ROOT / "research" / "grants" / "journal_grant_v4_signed.json"))
     ap.add_argument("--only", nargs="+", help="prepare: fetch only these dataset keys (see fetch_benchmarks.py --list)")
+    ap.add_argument("--no-reasoning-arm", action="store_true",
+                    help="run: skip the reasoning arm (thinking ON, a few models)")
     ap.add_argument("--skip-smoke", action="store_true")
     args = ap.parse_args()
     return {"prepare": prepare, "run": run, "status": show_status}[args.command](args)

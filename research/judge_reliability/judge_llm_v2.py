@@ -33,6 +33,10 @@ MODEL = os.environ.get("LLMV2_MODEL", "openai/gpt-oss-20b")
 BASE_URL = os.environ.get("JUDGE_BASE_URL", "https://api.groq.com/openai/v1").rstrip("/")
 URL = BASE_URL + "/chat/completions"
 SLEEP = float(os.environ.get("JUDGE_SLEEP", "8.0"))
+# JUDGE_INPUT=trace_answer shows the judge the model's reasoning trace as well as its final answer
+# (reasoning arm only); the default judges the final answer alone, as in all earlier runs.
+INPUT_MODE = os.environ.get("JUDGE_INPUT", "answer")
+SUFFIX = "llmv2_trace" if INPUT_MODE == "trace_answer" else "llmv2"
 OUT_DIR = Path(__file__).parent / "out"
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -160,7 +164,7 @@ def main(paths: list[str]) -> None:
     for path in paths:
         src = Path(path)
         stem = src.stem.replace("_judged", "")
-        out = OUT_DIR / f"{stem}_llmv2.json"
+        out = OUT_DIR / f"{stem}_{SUFFIX}.json"
         done = json.loads(out.read_text(encoding="utf-8")) if out.exists() else {}
         done = {k: v for k, v in done.items() if v.get("verdict") not in (None, "UNCLEAR")}
         records = json.loads(src.read_text(encoding="utf-8"))
@@ -170,6 +174,9 @@ def main(paths: list[str]) -> None:
             if k in done:
                 continue
             resp = (r.get("raw_response") or "").strip()
+            trace = (r.get("thinking_trace") or "").strip()
+            if INPUT_MODE == "trace_answer" and trace:
+                resp = "[REASONING TRACE]"+chr(10)+trace[:5000]+chr(10)+"[FINAL ANSWER]"+chr(10)+resp[:3000]
             if not resp:
                 done[k] = {"verdict": "UNCLEAR", "success": False, "why": "empty response"}
             else:

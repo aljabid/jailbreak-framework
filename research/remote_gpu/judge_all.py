@@ -29,16 +29,17 @@ import urllib.request
 import zipfile
 from pathlib import Path
 
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+import run_all  # noqa: E402
+
 ROOT = Path(__file__).resolve().parents[2]
 OUT_DIR = ROOT / "outputs"
 VERDICTS = ROOT / "research" / "judge_reliability" / "out"
 OLLAMA = os.environ.get("OLLAMA_HOST_URL", "http://127.0.0.1:11434")
-DEFAULT_MODELS = [
-    "llama3.1:8b", "qwen2.5:7b", "mistral:7b", "phi4",
-    "qwen2.5:14b", "gemma3:27b", "mistral-small:24b", "qwen2.5:32b",
-]
+DEFAULT_MODELS = run_all.DEFAULT_MODELS
 LLM_MODEL = "gpt-oss:20b"   # rubric judge v2 (not one of the targets, so no self-judging)
-SR_MODEL = "gemma2:27b"     # StrongREJECT-style judge (also not a target)
+SR_MODEL = "phi4"           # StrongREJECT-style judge: non-thinking, not a target, different lab
 
 
 def safe_name(model: str) -> str:
@@ -70,16 +71,16 @@ def first_prompt_ids(corpus: Path, k: int) -> set[str]:
     return {p["id"] for p in prompts[:k]}
 
 
-def build_subsets(models: list[str], corpus: Path, k: int) -> list[Path]:
+def build_subsets(models: list[str], corpus: Path, k: int, kind: str = "adv_gpu") -> list[Path]:
     ids = first_prompt_ids(corpus, k)
     files = []
     for m in models:
-        src = OUT_DIR / f"adv_gpu_{safe_name(m)}.json"
+        src = OUT_DIR / f"{kind}_{safe_name(m)}.json"
         if not src.exists():
             print(f"[skip] no generation output yet for {m}")
             continue
         recs = [r for r in load_records(src) if r.get("base_prompt_id") in ids]
-        dst = OUT_DIR / f"judge_subset_adv_gpu_{safe_name(m)}.json"
+        dst = OUT_DIR / f"judge_subset_{kind}_{safe_name(m)}.json"
         dst.write_text(json.dumps(recs), encoding="utf-8")
         print(f"  {m}: {len(recs)} answers in the first {k} prompts")
         files.append(dst)
@@ -109,7 +110,9 @@ def done_count(path: Path, suffix: str) -> int:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--models", nargs="+", default=DEFAULT_MODELS)
+    ap.add_argument("--models", nargs="+", default=None)
+    ap.add_argument("--arm", choices=["main", "think"], default="main",
+                    help="think: judge the reasoning-arm answers, also with the trace shown to the judge")
     ap.add_argument("--judge-n", type=int, default=250, help="judge answers for the first K prompts")
     ap.add_argument("--corpus", default=str(ROOT / "research" / "data_journal" / "journal_full_corpus.json"))
     ap.add_argument("--files", nargs="+", help="validation mode: response files to rejudge instead")
@@ -119,7 +122,11 @@ def main() -> None:
     args = ap.parse_args()
 
     OUT_DIR.mkdir(exist_ok=True)
-    files = validation_copies(args.files) if args.files else build_subsets(args.models, Path(args.corpus), args.judge_n)
+    if args.models is None:
+        args.models = run_all.REASONING_ARM_MODELS if args.arm == "think" else DEFAULT_MODELS
+    kind = "adv_think" if args.arm == "think" else "adv_gpu"
+    files = (validation_copies(args.files) if args.files
+             else build_subsets(args.models, Path(args.corpus), args.judge_n, kind))
     if args.status:
         for f in files:
             print(f"{f.name}: llmv2 {done_count(f, 'llmv2')}  strongreject {done_count(f, 'strongreject')}")
@@ -140,11 +147,15 @@ def main() -> None:
     run([sys.executable, "research/judge_reliability/judge_llm_v2.py", *paths], env)
     print(f"\n=== StrongREJECT-style judge ({args.sr_model}) ===", flush=True)
     run([sys.executable, "research/judge_reliability/judge_strongreject.py", *paths], env)
+    if args.arm == "think":
+        print(f"\n=== rubric judge v2 with the reasoning trace shown ({args.llm_model}) ===", flush=True)
+        run([sys.executable, "research/judge_reliability/judge_llm_v2.py", *paths],
+            dict(env, JUDGE_INPUT="trace_answer"))
 
-    zpath = OUT_DIR / "judges_for_researcher.zip"
+    zpath = OUT_DIR / ("judges_think_for_researcher.zip" if args.arm == "think" else "judges_for_researcher.zip")
     with zipfile.ZipFile(zpath, "w", zipfile.ZIP_DEFLATED) as z:
         for f in files:
-            for suffix in ("llmv2", "strongreject"):
+            for suffix in ("llmv2", "llmv2_trace", "strongreject"):
                 v = VERDICTS / f"{f.stem}_{suffix}.json"
                 if v.exists():
                     z.write(v, "judge_out/" + v.name)

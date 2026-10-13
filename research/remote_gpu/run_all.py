@@ -43,9 +43,19 @@ OUT_DIR = ROOT / "outputs"
 GUARD_OUT = ROOT / "research" / "judge_reliability" / "out"
 
 DEFAULT_MODELS = [
-    "llama3.1:8b", "qwen2.5:7b", "mistral:7b", "phi4",
-    "qwen2.5:14b", "gemma3:27b", "mistral-small:24b", "qwen2.5:32b",
+    "qwen3.8:27b", "gemma4:31b", "gemma4:26b", "muse-glimmer:30b",
+    "granite4.2:30b", "nemotron-3.5-lightning:30b",   # current generation (thinking-capable)
+    "llama3.1:8b", "mistral-small:24b",               # older anchors for comparison with prior work
 ]
+# Models with a thinking mode. The main arm switches thinking OFF so a 320-token cap measures the
+# answer; the reasoning arm runs a few of them with thinking ON and a large budget.
+THINKING_MODELS = {
+    "qwen3.8:27b", "gemma4:31b", "gemma4:26b", "muse-glimmer:30b",
+    "granite4.2:30b", "nemotron-3.5-lightning:30b",
+}
+REASONING_ARM_MODELS = ["qwen3.8:27b", "gemma4:26b", "granite4.2:30b"]
+REASONING_ARM_PROMPTS = 100
+REASONING_MAX_TOKENS = "3072"
 OLLAMA = os.environ.get("OLLAMA_HOST_URL", "http://127.0.0.1:11434")
 TARGET_ID = "journal-study"
 GUARD_MODEL = "llama-guard3:8b"
@@ -55,6 +65,10 @@ ESTIMATE_PROMPTS = 5  # x 6 strategies = 30 attacks per model
 
 def safe_name(model: str) -> str:
     return model.replace(":", "_").replace(".", "_").replace("/", "_")
+
+
+def arm_kind(args: argparse.Namespace) -> str:
+    return "adv_think" if getattr(args, "arm", "main") == "think" else "adv_gpu"
 
 
 def out_path(model: str, kind: str = "adv_gpu") -> Path:
@@ -162,11 +176,15 @@ def ensure_model(model: str) -> bool:
 def main_cmd(model: str, args: argparse.Namespace, out: Path, n: int | None,
              strategy: str | None) -> tuple[list[str], dict]:
     env = dict(os.environ)
+    thinking_arm = getattr(args, "arm", "main") == "think"
+    env.pop("JBF_OLLAMA_THINK", None)
+    if model in THINKING_MODELS:
+        env["JBF_OLLAMA_THINK"] = "true" if thinking_arm else "false"
     env.update({
         "JBF_ATTACK_BASE_PROMPTS_FILE": str(Path(args.prompts).resolve()),
         "JBF_MODEL_TEMPERATURE": "0",
-        "JBF_MODEL_MAX_TOKENS": "320",
-        "JBF_MODEL_TIMEOUT": "600",
+        "JBF_MODEL_MAX_TOKENS": REASONING_MAX_TOKENS if thinking_arm else "320",
+        "JBF_MODEL_TIMEOUT": "1800" if thinking_arm else "600",
         "JBF_MODEL_RATE_LIMIT_DELAY": "0",
         "JBF_FLUSH_EVERY": "500",  # batch the result-file writes (per-record rewrites are O(n^2))
     })
@@ -183,7 +201,7 @@ def main_cmd(model: str, args: argparse.Namespace, out: Path, n: int | None,
 
 
 def attack(model: str, args: argparse.Namespace) -> bool:
-    out = out_path(model, "smoke" if args.smoke else "adv_gpu")
+    out = out_path(model, "smoke" if args.smoke else arm_kind(args))
     want = expected_records(args)
     have = count_records(out) if out.exists() else 0
     if not args.smoke and want and have >= int(want * 0.99):
@@ -247,8 +265,8 @@ def estimate(models: list[str], args: argparse.Namespace) -> list[tuple[str, flo
     return rows
 
 
-def guard_all(models: list[str]) -> None:
-    files = [str(out_path(m)) for m in models if out_path(m).exists()]
+def guard_all(models: list[str], kind: str = "adv_gpu") -> None:
+    files = [str(out_path(m, kind)) for m in models if out_path(m, kind).exists()]
     if not files:
         return
     print(f"\n=== Llama Guard 3 8B over {len(files)} output files ===", flush=True)
@@ -262,13 +280,14 @@ def guard_all(models: list[str]) -> None:
 def package(models: list[str]) -> Path:
     zpath = OUT_DIR / "results_for_researcher.zip"
     with zipfile.ZipFile(zpath, "w", zipfile.ZIP_DEFLATED) as z:
-        for m in models:
-            p = out_path(m)
-            if p.exists():
-                z.write(p, p.name)
-            g = GUARD_OUT / f"{p.stem}_lg3_8b.json"
-            if g.exists():
-                z.write(g, "judge_out/" + g.name)
+        for m in sorted(set(models) | set(REASONING_ARM_MODELS)):
+            for kind in ("adv_gpu", "adv_think"):
+                p = out_path(m, kind)
+                if p.exists():
+                    z.write(p, p.name)
+                g = GUARD_OUT / f"{p.stem}_lg3_8b.json"
+                if g.exists():
+                    z.write(g, "judge_out/" + g.name)
         # data-version records: counts and hashes only, no prompt text
         for name in ("fetch_manifest.json", "corpus_manifest.json"):
             mpath = ROOT / "research" / "data_journal" / name
@@ -283,7 +302,7 @@ def status(models: list[str], args: argparse.Namespace) -> None:
           f"(N={args.n or 'all'}, variations={args.variations})")
     print(f"{'model':<22} status")
     for m in models:
-        p = out_path(m)
+        p = out_path(m, arm_kind(args))
         n = count_records(p) if p.exists() else 0
         state = "DONE" if n and want and n >= int(want * 0.99) else ("partial" if n else "not started")
         print(f"{m:<22} {state}  {n} records")
@@ -291,12 +310,15 @@ def status(models: list[str], args: argparse.Namespace) -> None:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--models", nargs="+", default=DEFAULT_MODELS)
+    ap.add_argument("--models", nargs="+", default=None,
+                    help="default: the main-arm models, or the reasoning-arm models with --arm think")
+    ap.add_argument("--arm", choices=["main", "think"], default="main",
+                    help="think: reasoning arm (thinking ON, large token budget, a few models)")
     ap.add_argument("--n", type=int, default=0, help="use the first N prompts of the corpus (default: all)")
     ap.add_argument("--variations", type=int, default=1)
     ap.add_argument("--concurrency", type=int, default=4)
     ap.add_argument("--prompts", default=str(ROOT / "research" / "data_journal" / "journal_full_corpus.json"))
-    ap.add_argument("--grant", default=str(ROOT / "research" / "grants" / "journal_grant_v3_signed.json"))
+    ap.add_argument("--grant", default=str(ROOT / "research" / "grants" / "journal_grant_v4_signed.json"))
     ap.add_argument("--smoke", action="store_true", help="tiny test run: 3 prompts, 1 strategy, first model only")
     ap.add_argument("--estimate", action="store_true", help="time a small run per model and project hours")
     ap.add_argument("--hours", type=float, default=0, help="with --estimate: the generation budget in hours")
@@ -304,6 +326,10 @@ def main() -> None:
     ap.add_argument("--no-guard", action="store_true", help="skip the Llama Guard pass")
     args = ap.parse_args()
 
+    if args.models is None:
+        args.models = REASONING_ARM_MODELS if args.arm == "think" else DEFAULT_MODELS
+    if args.arm == "think" and not args.n:
+        args.n = REASONING_ARM_PROMPTS
     if args.status:
         status(args.models, args)
         return
@@ -321,7 +347,7 @@ def main() -> None:
         print("\nSmoke test", "FAILED" if failed else "passed", "- see AUTHORS_RUN.md if it failed.")
         sys.exit(1 if failed else 0)
     if not args.no_guard:
-        guard_all(models)
+        guard_all(models, arm_kind(args))
     zpath = package(models)
     print("\n" + "=" * 60)
     status(models, args)
