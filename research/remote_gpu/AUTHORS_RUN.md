@@ -44,6 +44,23 @@ Judge models (also pulled automatically): `llama-guard3:8b` (5 GB), `gpt-oss:20b
 `gemma2:27b` (16 GB). Everything together is about 130 GB. Only models up to about 32B are used,
 because the machine has one 32 GB GPU. If a tag cannot be pulled, report it; do not substitute.
 
+## Datasets (downloaded by `prepare`)
+
+Public safety benchmarks of harmful requests, fetched from their original sources. Print the sources,
+terms and citations with `uv run python scripts/fetch_benchmarks.py --list`.
+
+| Dataset | Part used | Size | Note |
+|---|---|---|---|
+| AdvBench | all | 520 | required |
+| HarmBench | `standard` behaviours only (not contextual, not copyright) | 200 | required |
+| StrongREJECT | all | 313 | required |
+| JailbreakBench (JBB-Behaviors) | all | 100 | required |
+| XSTest | 200 unsafe prompts go into the corpus; 250 safe prompts are kept as a control set | 450 | optional |
+| SORRY-Bench | all | about 450 | optional, gated on Hugging Face (needs `HF_TOKEN`) |
+
+After removing duplicates across sources the corpus has about 1,300 unique prompts (about 1,750
+with SORRY-Bench). All files stay on this machine in `research/data_journal/` and are never published.
+
 ## One-time setup (Ubuntu)
 
 1. Prerequisites, and make sure the GPU driver works (`nvidia-smi` must show the RTX 5090;
