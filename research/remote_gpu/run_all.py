@@ -56,6 +56,13 @@ THINKING_MODELS = {
 REASONING_ARM_MODELS = ["qwen3.8:27b", "gemma4:26b", "granite4.2:30b"]
 REASONING_ARM_PROMPTS = 100
 REASONING_MAX_TOKENS = "3072"
+# Control arm: benign XSTest prompts through the same six strategies. A judge that calls these
+# "jailbroken" is producing false positives, which is how its specificity is measured.
+CONTROL_MODELS = ["qwen3.8:27b", "gemma4:26b", "llama3.1:8b"]
+CONTROL_PROMPTS = 100
+DATA = ROOT / "research" / "data_journal"
+CONTROL_SOURCE = DATA / "imported_xstest_safe.json"
+CONTROL_CORPUS = DATA / "control_corpus.json"
 OLLAMA = os.environ.get("OLLAMA_HOST_URL", "http://127.0.0.1:11434")
 TARGET_ID = "journal-study"
 GUARD_MODEL = "llama-guard3:8b"
@@ -67,8 +74,28 @@ def safe_name(model: str) -> str:
     return model.replace(":", "_").replace(".", "_").replace("/", "_")
 
 
+ARM_KINDS = {"main": "adv_gpu", "think": "adv_think", "control": "adv_control"}
+
+
 def arm_kind(args: argparse.Namespace) -> str:
-    return "adv_think" if getattr(args, "arm", "main") == "think" else "adv_gpu"
+    return ARM_KINDS[getattr(args, "arm", "main")]
+
+
+def build_control_corpus() -> Path:
+    """Round-robin over the XSTest types so any prefix covers every type; no text is invented."""
+    prompts = json.loads(CONTROL_SOURCE.read_text(encoding="utf-8"))["prompts"]
+    groups: dict[str, list[dict]] = {}
+    for p in prompts:
+        groups.setdefault(p.get("category", ""), []).append(p)
+    ordered: list[dict] = []
+    while any(groups.values()):
+        for key in sorted(groups):
+            if groups[key]:
+                ordered.append(groups[key].pop(0))
+    for i, p in enumerate(ordered):
+        p["id"] = f"control_{i:04d}"
+    CONTROL_CORPUS.write_text(json.dumps({"prompts": ordered}, ensure_ascii=False, indent=1), encoding="utf-8")
+    return CONTROL_CORPUS
 
 
 def out_path(model: str, kind: str = "adv_gpu") -> Path:
@@ -280,8 +307,8 @@ def guard_all(models: list[str], kind: str = "adv_gpu") -> None:
 def package(models: list[str]) -> Path:
     zpath = OUT_DIR / "results_for_researcher.zip"
     with zipfile.ZipFile(zpath, "w", zipfile.ZIP_DEFLATED) as z:
-        for m in sorted(set(models) | set(REASONING_ARM_MODELS)):
-            for kind in ("adv_gpu", "adv_think"):
+        for m in sorted(set(models) | set(REASONING_ARM_MODELS) | set(CONTROL_MODELS)):
+            for kind in ARM_KINDS.values():
                 p = out_path(m, kind)
                 if p.exists():
                     z.write(p, p.name)
@@ -312,8 +339,9 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--models", nargs="+", default=None,
                     help="default: the main-arm models, or the reasoning-arm models with --arm think")
-    ap.add_argument("--arm", choices=["main", "think"], default="main",
-                    help="think: reasoning arm (thinking ON, large token budget, a few models)")
+    ap.add_argument("--arm", choices=["main", "think", "control"], default="main",
+                    help="think: reasoning arm (thinking ON, large token budget, a few models); "
+                         "control: benign XSTest prompts, to measure judge false positives")
     ap.add_argument("--n", type=int, default=0, help="use the first N prompts of the corpus (default: all)")
     ap.add_argument("--variations", type=int, default=1)
     ap.add_argument("--concurrency", type=int, default=4)
@@ -327,9 +355,14 @@ def main() -> None:
     args = ap.parse_args()
 
     if args.models is None:
-        args.models = REASONING_ARM_MODELS if args.arm == "think" else DEFAULT_MODELS
+        args.models = {"think": REASONING_ARM_MODELS, "control": CONTROL_MODELS}.get(args.arm, DEFAULT_MODELS)
     if args.arm == "think" and not args.n:
         args.n = REASONING_ARM_PROMPTS
+    if args.arm == "control":
+        if not CONTROL_SOURCE.exists():
+            sys.exit(f"{CONTROL_SOURCE} missing: run study.py prepare first (XSTest safe prompts)")
+        args.prompts = str(build_control_corpus())
+        args.n = args.n or CONTROL_PROMPTS
     if args.status:
         status(args.models, args)
         return

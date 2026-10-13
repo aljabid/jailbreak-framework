@@ -135,7 +135,8 @@ uv run python research/remote_gpu/study.py run --budget-hours 75
 
 It downloads the models (the first time), measures the real speed of each, chooses how many
 prompts fit the budget, and works in stages (first 300 prompts, then 700, then as many as the
-budget allows), then the reasoning arm. After each stage it scores the answers with Llama Guard and, on a sample, with
+budget allows), then the reasoning arm and a small control arm (benign
+XSTest prompts, to measure judge false positives). After each stage it scores the answers with Llama Guard and, on a sample, with
 two local LLM judges, and rewrites the zip files below. Check progress any time with
 `uv run python research/remote_gpu/study.py status`.
 
@@ -153,6 +154,7 @@ answers inside contain harmful content produced by the models.
 
 * `outputs/results_for_researcher.zip`
 * `outputs/judges_for_researcher.zip`
+* `outputs/judges_think_for_researcher.zip` and `outputs/judges_control_for_researcher.zip` (if present)
 
 ## Please do not
 

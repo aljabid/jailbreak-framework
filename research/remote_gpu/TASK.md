@@ -135,7 +135,8 @@ could not be used, and any warnings. At the end tell the human to send these fil
 researcher **privately** (not through GitHub):
 
 * `outputs/results_for_researcher.zip` (answers, Llama Guard verdicts, data-version records);
-* `outputs/judges_for_researcher.zip` and `outputs/judges_think_for_researcher.zip` (LLM judge verdicts only).
+* `outputs/judges_for_researcher.zip`, `outputs/judges_think_for_researcher.zip` and
+  `outputs/judges_control_for_researcher.zip` (LLM judge verdicts only).
 
 The human should delete the model folder, `outputs/` and `validate_in/` after the researcher
 confirms receipt.

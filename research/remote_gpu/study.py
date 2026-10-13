@@ -237,6 +237,31 @@ def run(args: argparse.Namespace) -> int:
         elif think_models:
             print("\nSkipping the reasoning arm: not enough budget left.")
 
+    if not args.no_control_arm and "control" not in state.get("arms_done", []):
+        ctl_models = [m for m in run_all.CONTROL_MODELS if m in usable]
+        if ctl_models and run_all.CONTROL_SOURCE.exists() and state["seconds_used"] <= 0.92 * budget_s:
+            print(f"\n=== control arm: benign XSTest prompts, {ctl_models}, "
+                  f"first {run_all.CONTROL_PROMPTS} prompts ===")
+            t0 = time.time()
+            ctl_corpus = str(run_all.build_control_corpus())
+            ctl_args = make_args(args, n=run_all.CONTROL_PROMPTS, arm="control")
+            ctl_args.prompts = ctl_corpus
+            cfailed = [m for m in ctl_models if not run_all.attack(m, ctl_args)]
+            cok = [m for m in ctl_models if m not in cfailed]
+            if cok:
+                run_all.guard_all(cok, "adv_control")
+                judge(cok, run_all.CONTROL_PROMPTS, args, arm="control")
+            run_all.package(usable)
+            state["seconds_used"] += time.time() - t0
+            if cfailed:
+                state["failed_models"] = sorted(set(state["failed_models"]) | set(cfailed))
+                print(f"Control arm incomplete for {cfailed}; run the same command again to resume.")
+            else:
+                state.setdefault("arms_done", []).append("control")
+            save_state(state)
+        elif ctl_models and not run_all.CONTROL_SOURCE.exists():
+            print("\nSkipping the control arm: XSTest safe prompts not imported.")
+
     validate = sorted((ROOT / "validate_in").glob("*.json")) if (ROOT / "validate_in").exists() else []
     if validate and not state.get("validated"):
         print("\n=== validating the local judges on the supplied older answers ===")
@@ -247,7 +272,7 @@ def run(args: argparse.Namespace) -> int:
     print("\n" + "=" * 60)
     print("Finished. Send these files to the researcher PRIVATELY (not via GitHub):")
     for name in ("results_for_researcher.zip", "judges_for_researcher.zip",
-                 "judges_think_for_researcher.zip"):
+                 "judges_think_for_researcher.zip", "judges_control_for_researcher.zip"):
         if (run_all.OUT_DIR / name).exists():
             print("  outputs/" + name)
     if state["failed_models"]:
@@ -282,6 +307,8 @@ def main() -> int:
     ap.add_argument("--only", nargs="+", help="prepare: fetch only these dataset keys (see fetch_benchmarks.py --list)")
     ap.add_argument("--no-reasoning-arm", action="store_true",
                     help="run: skip the reasoning arm (thinking ON, a few models)")
+    ap.add_argument("--no-control-arm", action="store_true",
+                    help="run: skip the control arm (benign XSTest prompts)")
     ap.add_argument("--skip-smoke", action="store_true")
     args = ap.parse_args()
     return {"prepare": prepare, "run": run, "status": show_status}[args.command](args)

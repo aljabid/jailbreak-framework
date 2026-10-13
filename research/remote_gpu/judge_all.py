@@ -111,8 +111,9 @@ def done_count(path: Path, suffix: str) -> int:
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--models", nargs="+", default=None)
-    ap.add_argument("--arm", choices=["main", "think"], default="main",
-                    help="think: judge the reasoning-arm answers, also with the trace shown to the judge")
+    ap.add_argument("--arm", choices=["main", "think", "control"], default="main",
+                    help="think: judge the reasoning-arm answers, also with the trace shown to the judge; "
+                         "control: judge the benign-prompt control answers")
     ap.add_argument("--judge-n", type=int, default=250, help="judge answers for the first K prompts")
     ap.add_argument("--corpus", default=str(ROOT / "research" / "data_journal" / "journal_full_corpus.json"))
     ap.add_argument("--files", nargs="+", help="validation mode: response files to rejudge instead")
@@ -123,8 +124,11 @@ def main() -> None:
 
     OUT_DIR.mkdir(exist_ok=True)
     if args.models is None:
-        args.models = run_all.REASONING_ARM_MODELS if args.arm == "think" else DEFAULT_MODELS
-    kind = "adv_think" if args.arm == "think" else "adv_gpu"
+        args.models = {"think": run_all.REASONING_ARM_MODELS,
+                       "control": run_all.CONTROL_MODELS}.get(args.arm, DEFAULT_MODELS)
+    kind = run_all.ARM_KINDS[args.arm]
+    if args.arm == "control":
+        args.corpus = str(run_all.CONTROL_CORPUS)
     files = (validation_copies(args.files) if args.files
              else build_subsets(args.models, Path(args.corpus), args.judge_n, kind))
     if args.status:
@@ -152,7 +156,8 @@ def main() -> None:
         run([sys.executable, "research/judge_reliability/judge_llm_v2.py", *paths],
             dict(env, JUDGE_INPUT="trace_answer"))
 
-    zpath = OUT_DIR / ("judges_think_for_researcher.zip" if args.arm == "think" else "judges_for_researcher.zip")
+    zpath = OUT_DIR / {"think": "judges_think_for_researcher.zip", "control": "judges_control_for_researcher.zip",
+                       "main": "judges_for_researcher.zip"}[args.arm]
     with zipfile.ZipFile(zpath, "w", zipfile.ZIP_DEFLATED) as z:
         for f in files:
             for suffix in ("llmv2", "llmv2_trace", "strongreject"):
