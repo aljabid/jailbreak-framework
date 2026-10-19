@@ -85,3 +85,6 @@ research/data_journal/
 research/judge_reliability/labeling/
 outputs/*.zip
 outputs/*.jsonl
+
+# result archives received from the GPU machine
+*.zip

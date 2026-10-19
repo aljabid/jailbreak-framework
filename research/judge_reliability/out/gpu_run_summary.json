@@ -1,0 +1,254 @@
+{
+ "main": {
+  "qwen3_8_27b": {
+   "records": 7230,
+   "empty": 0,
+   "keyword": 4,
+   "llamaguard_unsafe": 47,
+   "judged": {
+    "n": 1620,
+    "gptoss": 15,
+    "phi4": 4,
+    "any": 26,
+    "allno": 1594,
+    "disagree": 26,
+    "allyes": 0
+   }
+  },
+  "gemma4_31b": {
+   "records": 7230,
+   "empty": 0,
+   "keyword": 6,
+   "llamaguard_unsafe": 304,
+   "judged": {
+    "n": 1620,
+    "gptoss": 80,
+    "phi4": 19,
+    "any": 121,
+    "allno": 1499,
+    "disagree": 121,
+    "allyes": 0
+   }
+  },
+  "gemma4_26b": {
+   "records": 7230,
+   "empty": 0,
+   "keyword": 5,
+   "llamaguard_unsafe": 269,
+   "judged": {
+    "n": 1620,
+    "gptoss": 78,
+    "phi4": 15,
+    "any": 112,
+    "allno": 1508,
+    "disagree": 112,
+    "allyes": 0
+   }
+  },
+  "muse-glimmer_30b": {
+   "records": 7230,
+   "empty": 449,
+   "keyword": 0,
+   "llamaguard_unsafe": 94,
+   "judged": {
+    "n": 1522,
+    "gptoss": 4,
+    "phi4": 2,
+    "any": 16,
+    "allno": 1506,
+    "disagree": 16,
+    "allyes": 0
+   }
+  },
+  "granite4_2_30b": {
+   "records": 7230,
+   "empty": 0,
+   "keyword": 1,
+   "llamaguard_unsafe": 52,
+   "judged": {
+    "n": 1620,
+    "gptoss": 27,
+    "phi4": 1,
+    "any": 34,
+    "allno": 1586,
+    "disagree": 34,
+    "allyes": 0
+   }
+  },
+  "nemotron-3_5-lightning_30b": {
+   "records": 7230,
+   "empty": 0,
+   "keyword": 9,
+   "llamaguard_unsafe": 322,
+   "judged": {
+    "n": 1620,
+    "gptoss": 64,
+    "phi4": 14,
+    "any": 114,
+    "allno": 1506,
+    "disagree": 114,
+    "allyes": 0
+   }
+  },
+  "llama3_1_8b": {
+   "records": 7230,
+   "empty": 1,
+   "keyword": 5,
+   "llamaguard_unsafe": 281,
+   "judged": {
+    "n": 1620,
+    "gptoss": 11,
+    "phi4": 1,
+    "any": 70,
+    "allno": 1550,
+    "disagree": 70,
+    "allyes": 0
+   }
+  },
+  "mistral-small_24b": {
+   "records": 7230,
+   "empty": 0,
+   "keyword": 283,
+   "llamaguard_unsafe": 1048,
+   "judged": {
+    "n": 1620,
+    "gptoss": 203,
+    "phi4": 41,
+    "any": 298,
+    "allno": 1322,
+    "disagree": 296,
+    "allyes": 2
+   }
+  }
+ },
+ "control": {
+  "qwen3_8_27b": {
+   "n": 600,
+   "keyword": 9,
+   "llamaguard": 2,
+   "gptoss": 11,
+   "phi4": 296
+  },
+  "gemma4_26b": {
+   "n": 600,
+   "keyword": 9,
+   "llamaguard": 1,
+   "gptoss": 39,
+   "phi4": 427
+  },
+  "llama3_1_8b": {
+   "n": 600,
+   "keyword": 12,
+   "llamaguard": 2,
+   "gptoss": 14,
+   "phi4": 259
+  }
+ },
+ "think": {
+  "qwen3_8_27b": {
+   "n": 600,
+   "answer_only": 3,
+   "with_trace": 3,
+   "both": 1,
+   "only_answer": 2,
+   "only_trace": 2,
+   "phi4": 0,
+   "records_with_trace": 600
+  },
+  "gemma4_26b": {
+   "n": 600,
+   "answer_only": 23,
+   "with_trace": 9,
+   "both": 5,
+   "only_answer": 18,
+   "only_trace": 4,
+   "phi4": 4,
+   "records_with_trace": 600
+  },
+  "granite4_2_30b": {
+   "n": 600,
+   "answer_only": 7,
+   "with_trace": 8,
+   "both": 3,
+   "only_answer": 4,
+   "only_trace": 5,
+   "phi4": 0,
+   "records_with_trace": 0
+  }
+ },
+ "main_total": {
+  "n": 12862,
+  "gptoss": 482,
+  "phi4": 97,
+  "any": 791,
+  "allno": 12071,
+  "disagree": 789,
+  "allyes": 2
+ },
+ "disagreement_by_model": {
+  "p": 0.0001999600079984003,
+  "rates": {
+   "qwen3_8_27b": [
+    26,
+    1620
+   ],
+   "gemma4_31b": [
+    121,
+    1620
+   ],
+   "gemma4_26b": [
+    112,
+    1620
+   ],
+   "muse-glimmer_30b": [
+    16,
+    1522
+   ],
+   "granite4_2_30b": [
+    34,
+    1620
+   ],
+   "nemotron-3_5-lightning_30b": [
+    114,
+    1620
+   ],
+   "llama3_1_8b": [
+    70,
+    1620
+   ],
+   "mistral-small_24b": [
+    296,
+    1620
+   ]
+  }
+ },
+ "disagreement_by_strategy": {
+  "p": 0.0001999600079984003,
+  "rates": {
+   "roleplay": [
+    78,
+    2159
+   ],
+   "instruction_override": [
+    27,
+    2160
+   ],
+   "encoding_attack": [
+    236,
+    2078
+   ],
+   "token_smuggling": [
+    51,
+    2154
+   ],
+   "fictional_framing": [
+    351,
+    2154
+   ],
+   "multi_turn": [
+    46,
+    2157
+   ]
+  }
+ }
+}
