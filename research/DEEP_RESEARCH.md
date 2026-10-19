@@ -72,7 +72,7 @@ Five parts, each small, together one paper:
    must be realistic and span difficulty. No source found that does this.
 3. **Judge-adjusted evidential ceiling.** Extend Kaur: with judge sensitivity s and specificity t, a clean
    sheet over n prompts at true harm rate p has probability about (1 - s p)^n of being observed. Example,
-   certifying p at most 1% with 95% confidence: n = 298 with a perfect judge, 598 at s = 0.5, 1,197 at
+   certifying p at most 1% with 95% confidence: n = 299 with a perfect judge, 598 at s = 0.5, 1,197 at
    s = 0.25. So the sensitivity lower bound (from part 2) sets the sample size. A short derivation plus a
    calculator is the deliverable.
 4. **Decision-level validity.** Replace "judge accuracy" by the rate at which a judge-based comparison
