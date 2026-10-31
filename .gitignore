@@ -88,3 +88,4 @@ outputs/*.jsonl
 
 # result archives received from the GPU machine
 *.zip
+research/judge_reliability/labeling_v2/

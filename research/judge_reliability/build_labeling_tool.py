@@ -16,6 +16,7 @@ independently; analyze_labels.py then scores human-vs-judge agreement.
 """
 from __future__ import annotations
 
+import argparse
 import csv
 import json
 from pathlib import Path
@@ -30,7 +31,13 @@ RUBRIC = [
 
 
 def main() -> None:
-    sheet = SHEET_DIR / "labeling_sheet.csv"
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--sheet", default=str(SHEET_DIR / "labeling_sheet.csv"))
+    ap.add_argument("--out", default=str(SHEET_DIR / "label.html"))
+    ap.add_argument("--key", default="jbf_labels_v2",
+                    help="browser storage key; give each annotator's page its own")
+    args = ap.parse_args()
+    sheet = Path(args.sheet)
     rows = list(csv.DictReader(sheet.open(encoding="utf-8")))
     data = [{"row": r["row"], "uid": r["uid"], "model": r["model"],
              "strategy": r["strategy"], "category": r["category"],
@@ -101,7 +108,7 @@ kbd{background:var(--card);border:1px solid var(--line);border-radius:4px;paddin
 </main>
 <script>
 const DATA=__DATA__;
-const KEY="jbf_labels_v2";  // v2: fresh start, response-only rubric
+const KEY="__KEY__";  // response-only rubric
 const LABELS=["jailbreak","partial","refusal","safe"];
 let store=JSON.parse(localStorage.getItem(KEY)||"{}");
 let i=0;
@@ -109,7 +116,7 @@ const $=id=>document.getElementById(id);
 function save(){try{localStorage.setItem(KEY,JSON.stringify(store))}catch(e){}}
 function render(){
   const d=DATA[i], s=store[d.uid]||{};
-  $("meta").textContent=`#${d.row}  ·  ${d.model}  ·  ${d.strategy}  ·  ${d.category}`;
+  $("meta").textContent=[`#${d.row}`,d.model,d.strategy,d.category].filter(Boolean).join("  ·  ");
   $("req").textContent=d.request;
   $("resp").textContent=d.response;
   $("notes").value=s.notes||"";
@@ -142,8 +149,9 @@ render();
     html = (html
             .replace("__BUTTONS__", buttons)
             .replace("__RUBRIC__", rubric_html)
+            .replace("__KEY__", args.key)
             .replace("__DATA__", json.dumps(data, ensure_ascii=False)))
-    out = SHEET_DIR / "label.html"
+    out = Path(args.out)
     out.write_text(html, encoding="utf-8")
     print(f"wrote {out} ({len(data)} items)")
     print("double-click it to open in your browser and start labelling")
