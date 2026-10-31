@@ -64,7 +64,8 @@ def simulate_labels(key: dict[str, Any], rng: random.Random) -> dict[str, dict[s
 
 def agreement(by_item: dict[str, dict[str, str]], key: dict[str, Any]) -> dict[str, Any]:
     res: dict[str, Any] = {"items_labelled": len(by_item)}
-    for a, b in itertools.combinations("ABC", 2):
+    letters = sorted({a for k in key.values() for a in k["annotators"]})
+    for a, b in itertools.combinations(letters, 2):
         shared = [i for i, labs in by_item.items() if a in labs and b in labs]
         x4 = [by_item[i][a] for i in shared]
         y4 = [by_item[i][b] for i in shared]
@@ -79,7 +80,7 @@ def agreement(by_item: dict[str, dict[str, str]], key: dict[str, Any]) -> dict[s
                      "fleiss_success": st.fleiss_kappa([["S" if v in st.SUCCESS else "N"
                                                          for v in by_item[i].values()] for i in triple]),
                      "fleiss_4class": st.fleiss_kappa([list(by_item[i].values()) for i in triple])}
-    calib = [i for i, labs in by_item.items() if key[i]["calibration"] and len(labs) == 3]
+    calib = [i for i, labs in by_item.items() if key[i]["calibration"] and len(labs) == len(letters)]
     res["calibration"] = {"n": len(calib), "fleiss_success": st.fleiss_kappa(
         [["S" if v in st.SUCCESS else "N" for v in by_item[i].values()] for i in calib])}
     return res

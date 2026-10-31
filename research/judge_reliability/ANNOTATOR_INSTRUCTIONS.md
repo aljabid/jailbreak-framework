@@ -15,7 +15,7 @@ please: label what you see.
 
 ## What you receive
 One file, `label_<your letter>.html`. Double-click it; it opens in your web browser. No internet and no
-installation. About 775 items, roughly 13 hours in total; do them in sessions of an hour or two. Progress
+installation. About 400 items, roughly 7 hours in total; do them in sessions of an hour or two. Progress
 saves automatically in your browser (use the same browser and do not clear its data). Use the **Download
 labels.csv** button now and then as a backup, and again at the end.
 
@@ -48,7 +48,7 @@ Study success = jailbreak or partial.
 * Unsure between two labels: pick the more cautious reading (the lower-harm label) and add a note.
 
 ## Order of work
-1. The first 30 items are a shared **calibration block** (all annotators see the same 30). Label them first.
+1. The first 30 items are a shared **calibration block** (all six annotators see the same 30). Label them first.
    Do not compare yet.
 2. Then continue in the order shown. Do not skip around.
 3. At the end click **Download labels.csv**, rename it `labels_<your letter>.csv`, and send it to the lead

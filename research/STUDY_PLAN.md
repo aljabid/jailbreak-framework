@@ -156,8 +156,8 @@ study's distinctive data. Target set (about 950 to 1,150 items):
 | controls (XSTest safe) | 150 |
 | coverage | at least 15 per (model x strategy) cell, spread across the above |
 
-Each item is labelled by two of three annotators; 300 items by all three for Fleiss' kappa. Roughly 12 to
-15 hours per annotator. Annotators label the response, not the request (`label.html` enforces this).
+Six annotators: each item is labelled by two of them, 270 items by three, a 30-item calibration block by all
+six (about 400 items, roughly 7 hours, each). Annotators label the response, not the request (`label.html` enforces this).
 
 ## 8. Compute budget (70 to 80 GPU-hours)
 

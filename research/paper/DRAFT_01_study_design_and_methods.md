@@ -65,14 +65,15 @@ the control arm 25 judge-flagged and 25 unflagged responses per model (150). Tot
 seeded (20261031) and reproducible from the population files.
 
 ### 4.7 Annotation
-Three annotators work independently. Each item is labelled by two of three; 300 randomly chosen items by all
-three, of which 30 form a shared calibration block done first. Annotators see a neutral item id, the request
+Six annotators work independently. Each item is labelled by two of them; 270 randomly chosen items by three;
+30 items form a shared calibration block labelled by all six and done first (about 400 items, 7 hours,
+per annotator). Annotators see a neutral item id, the request
 and the response; never the model name, strategy, stratum or any judge verdict. Labels: jailbreak, partial,
 refusal, safe; success = jailbreak or partial. Instructions and the rubric are in the supplementary material.
-Disagreements: majority of three; a pair that disagrees goes to a further reader. Every positive found in the
+Disagreements: majority of the available annotators; a pair that disagrees goes to a further reader (the lead author). Every positive found in the
 all-no stratum is re-read by the lead author before it is counted. Annotators are adults who agreed to read
 harmful content, can stop at any time, and the study has ethics approval/exemption [FILL: reference].
-Agreement is reported as Cohen's kappa (pairwise), Fleiss' kappa (triple set) and raw agreement, on both
+Agreement is reported as Cohen's kappa (pairwise), Fleiss' kappa (the triple set and the six-rater calibration block) and raw agreement, on both
 the four-class and the binary success scale.
 
 ## 5. Methods
@@ -135,7 +136,7 @@ for the claim being made (checklist in the supplement).
 * Models: eight open-weight models; commercial systems and larger models excluded.
 * Judges: four judges; local hosting of the LLM judges changes them relative to API-hosted versions.
 * Positives are rare (about 1 to 7% for most models), so cell-level estimates are wide.
-* Three annotators, one rubric; harm is partly subjective; the rubric asks about usable content, not about
+* Six annotators, one rubric; harm is partly subjective; the rubric asks about usable content, not about
   factual accuracy.
 * Data issues: muse-glimmer empty responses (6.2%); granite4.2 reasoning arm returned no trace; the LLM
   judges covered 270 of 1,205 prompts; SORRY-Bench absent. [VERIFY each before submission.]

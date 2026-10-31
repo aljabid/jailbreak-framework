@@ -9,8 +9,8 @@ Design (see STUDY_PLAN.md section 7, LITERATURE_REVIEW.md section 7):
     unflagged ones, to measure false positives;
   * every sampled item records its substratum size N and sample size n, so population estimates can use
     exact inclusion probabilities n/N;
-  * each item is labelled by two of three annotators; a random 300 are labelled by all three; the first 30 of
-    those form a shared calibration block that every annotator does first;
+  * six annotators; each item is labelled by two of them; a random 270 items by three; a shared calibration
+    block of 30 items by all six, which every annotator does first (about 400 items, roughly 7 hours, each);
   * annotators see neutral item ids, never the model name, strategy or any judge verdict.
 
 Outputs (all under labeling_v2/, gitignored because they contain raw responses):
@@ -38,12 +38,12 @@ sys.path.insert(0, str(HERE))
 import gpu_population as gp  # noqa: E402
 
 OUT = HERE / "labeling_v2"
-ANNOTATORS = ["A", "B", "C"]
+ANNOTATORS = ["A", "B", "C", "D", "E", "F"]
 ALL_NO_PER_MODEL = 50
 DISAGREE_TOTAL = 450
 DISAGREE_FLOOR = 30
 CONTROL_PER_MODEL = 50
-TRIPLE = 300
+TRIPLE = 270
 CALIBRATION = 30
 
 
@@ -96,11 +96,20 @@ def assign(items: list[dict], rng: random.Random) -> None:
     """Add 'annotators' (two or three of A, B, C) and 'calibration' to every item, in place."""
     order = list(range(len(items)))
     rng.shuffle(order)
-    triple = set(order[:TRIPLE])
     calib = set(order[:CALIBRATION])
-    pairs = itertools.cycle(list(itertools.combinations(ANNOTATORS, 2)))
+    triple = set(order[CALIBRATION:CALIBRATION + TRIPLE])
+    pair_combos = list(itertools.combinations(ANNOTATORS, 2))
+    triple_combos = list(itertools.combinations(ANNOTATORS, 3))
+    rng.shuffle(pair_combos)
+    rng.shuffle(triple_combos)
+    pairs, triples = itertools.cycle(pair_combos), itertools.cycle(triple_combos)
     for i in order:
-        items[i]["annotators"] = list(ANNOTATORS) if i in triple else list(next(pairs))
+        if i in calib:
+            items[i]["annotators"] = list(ANNOTATORS)
+        elif i in triple:
+            items[i]["annotators"] = list(next(triples))
+        else:
+            items[i]["annotators"] = list(next(pairs))
         items[i]["calibration"] = i in calib
 
 
@@ -138,6 +147,7 @@ def write_sheets(items: list[dict], seed: int) -> None:
                               "per_annotator": {a: sum(a in it["annotators"] for it in items)
                                                 for a in ANNOTATORS},
                               "triple": sum(len(it["annotators"]) == 3 for it in items),
+                              "all_raters": sum(len(it["annotators"]) == len(ANNOTATORS) for it in items),
                               "calibration": sum(it["calibration"] for it in items)}
     for it in items:
         counts["by_audit_stratum"][it["audit_stratum"]] += 1
@@ -145,7 +155,7 @@ def write_sheets(items: list[dict], seed: int) -> None:
     counts["by_audit_stratum"] = dict(counts["by_audit_stratum"])
     (OUT / "summary.json").write_text(json.dumps(counts, indent=1), encoding="utf-8")
     print(json.dumps({k: counts[k] for k in ("items", "by_audit_stratum", "per_annotator", "triple",
-                                              "calibration")}, indent=1))
+                                              "all_raters", "calibration")}, indent=1))
 
 
 def main() -> None:
